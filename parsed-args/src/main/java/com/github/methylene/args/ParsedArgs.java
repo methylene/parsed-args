@@ -2,11 +2,13 @@ package com.github.methylene.args;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 
 public class ParsedArgs {
 
@@ -152,7 +154,7 @@ public class ParsedArgs {
     return m;
   }
 
-  public static ParsedArgs parse(String[] s) {
+  public static ParsedArgs parse(String... s) {
     return new ParsedArgs(parseMap(s));
   }
 
@@ -170,6 +172,10 @@ public class ParsedArgs {
     return parsed.get(mapKey(arg));
   }
 
+  public boolean contains(String arg) {
+    return parsed.containsKey(mapKey(arg));
+  }
+
   public int getInt(String arg, Integer defaultValue) {
     List<String> n = get(arg);
     if (n == null || n.size() == 0)
@@ -184,6 +190,10 @@ public class ParsedArgs {
 
   public int getInt(String arg) {
     return getInt(arg, null);
+  }
+
+  public List<String> getKeys() {
+    return new ArrayList<String>(parsed.keySet());
   }
 
 }
