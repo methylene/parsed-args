@@ -14,18 +14,11 @@ public class ParsedArgsTest {
     assertEquals(1, factory().parse("-n1").getInt("n"));
     assertEquals(1, factory().parse("-m1", "-n1").getInt("n"));
     assertEquals(1, factory().parse("-m1", "-n", "1").getInt("n"));
-    assertEquals(1, factory().parse("-m", "1", "1,", "-n", "1").getInt("n"));
     assertEquals(1, factory().parse("-m", "-n1", "-c").getInt("n"));
     assertEquals(1, factory().parse("-m", "-n", "1", "-c1").getInt("n"));
     assertEquals(1, factory().parse("-m", "1", "-n1", "-c").getInt("n"));
-    assertEquals(1, factory().parse("-m", "1", "1,", "-n", "1", "-c", "1").getInt("n"));
   }
 
-  @Test
-  public void testGet() throws Exception {
-    assertEquals(asList("1", "1"), factory().parse("-n", "1", "1").get("n"));
-    assertEquals(asList("1", "1"), factory().parse("-m1", "-n", "1", "1").get("n"));
-  }
 
   @Test(expected = IllegalArgumentException.class)
   public void testDash2() throws Exception {
@@ -60,20 +53,15 @@ public class ParsedArgsTest {
     assertEquals(1, factory().parse("--num=1").getInt("num"));
     assertEquals(1, factory().parse("-m1", "--num=1").getInt("num"));
     assertEquals(1, factory().parse("-m1", "--num", "1").getInt("num"));
-    assertEquals(1, factory().parse("-m", "1", "1,", "--num", "1").getInt("num"));
     assertEquals(1, factory().parse("-m", "--num=1", "-c").getInt("num"));
     assertEquals(1, factory().parse("-m", "--num", "1", "-c1").getInt("num"));
     assertEquals(1, factory().parse("-m", "1", "--num=1", "-c").getInt("num"));
-    assertEquals(1, factory().parse("-m", "1", "1,", "--num", "1", "-c", "1").getInt("num"));
   }
 
   @Test
   public void testGetLong() throws Exception {
-    assertEquals(asList("1", "1"), factory().parse("--num", "1", "1").get("num"));
     assertEquals(asList("1"), factory().parse("--num=1", "-1").get("num"));
     assertEquals(asList("1"), factory().parse("-m1", "--num=1", "-1").get("num"));
-    assertEquals(asList("1", "1"), factory().parse("-m1", "--num", "1", "1").get("num"));
-    assertEquals(asList("1", "1"), factory().parse("-m", "1", "--num=1", "-c", "1", "--num=1").get("num"));
   }
 
   @Test(expected = IllegalArgumentException.class)

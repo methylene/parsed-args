@@ -1,33 +1,31 @@
 package com.github.methylene.args;
 
-import static com.github.methylene.args.Util.rest;
+import java.util.*;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import static java.util.Arrays.copyOf;
+
+import static com.github.methylene.args.Util.nthrest;
+import static com.github.methylene.args.Util.rest;
 
 public class ParsedArgsFactory {
 
   /**
    * <p>Split the argument into two arrays: The first "short option" group, and all remaining arguments.
    * A short option group starts with a single dash, followed by single character called the option name.</p>
-   *
+   * <p/>
    * <p>If the option name is immediately followed by more characters,
    * these are treated as the value of the option group. This is called an abbreviated short option.</p>
-   *
+   * <p/>
    * <p>If the short option group is not abbreviated, more tokens are added to the group until the input is
    * exhausted or the first token starting with a dash is encountered.</p>
-   *
+   * <p/>
    * <p>The following are equivalent:</p>
-   *
+   * <p/>
    * <pre><code>
    *   nextShort(new String[]{"-n2"}); // abbreviated short option
    *   nextShort(new String[]{"-n", "2"}); // short option
    * </code></pre>
-   *
+   * <p/>
    * <p>The input of this method must not be empty.</p>
    *
    * @param args arguments array
@@ -37,7 +35,7 @@ public class ParsedArgsFactory {
   String[][] nextShort(String[] args) {
     if (args == null || args.length == 0)
       throw new IllegalArgumentException("empty input");
-    if (args[0].length() > 2) { // for example: -n2
+    if (args[0].length() > 2) { //TODO: cases number vs multiple boolean args
       return new String[][]{
           new String[]{
               args[0].substring(0, 2),
@@ -46,14 +44,13 @@ public class ParsedArgsFactory {
           rest(args)
       };
     }
-    for (int i = 1; i < args.length; i += 1)
-      if (args[i].startsWith("-")) {
-        return new String[][]{
-            Arrays.copyOf(args, i),
-            rest(args, i)
-        };
-      }
-    return new String[][]{args, null};
+    if (args.length == 1 || args[1].startsWith("-")) {
+      return new String[][]{
+          copyOf(args, 1),
+          rest(args)
+      };
+    }
+    return new String[][]{copyOf(args, 2), nthrest(args, 2)};
   }
 
 
@@ -61,11 +58,11 @@ public class ParsedArgsFactory {
    * <p>Split the argument into two arrays: The first "long option" group, and all remaining arguments.
    * A long option group starts with two dashes, followed by a string of length greater than 1, called the option name.
    * </p>
-   *
+   * <p/>
    * <p>If the option name contains the equals sign {@code '='}, the remaining characters after the equals sign
    * form the option value, and the group ends.</p>
-   *
-   *  <p>Otherwise more tokens are added to the group until the input is
+   * <p/>
+   * <p>Otherwise more tokens are added to the group until the input is
    * exhausted or the first token starting with a dash is encountered.</p>
    *
    * @param args arguments array
@@ -94,14 +91,13 @@ public class ParsedArgsFactory {
         };
       }
     } else {
-      for (int i = 1; i < args.length; i += 1)
-        if (args[i].startsWith("-")) {
-          return new String[][]{
-              Arrays.copyOf(args, i),
-              rest(args, i)
-          };
-        }
-      return new String[][]{args, null};
+      if (args.length == 1 || args[1].startsWith("-")) {
+        return new String[][]{
+            copyOf(args, 1),
+            rest(args)
+        };
+      }
+      return new String[][]{copyOf(args, 2), nthrest(args, 2)};
     }
   }
 
@@ -112,11 +108,12 @@ public class ParsedArgsFactory {
    * <p>{@code '-'} becomes the group name of an argument group without any argument values.</p>
    * <p>{@code '--'} becomes the group name of an argument group containing all remaining arguments,
    * regardless whether they start with a dash or not.</p>
+   *
    * @param args an argument array
    * @return if args is not empty,
    * an array of length 2, containing the first group and the remaining arguments
    * @throws java.lang.IllegalArgumentException if {@code args} is not empty and
-   * {@code args[0]} does not start with a dash
+   *                                            {@code args[0]} does not start with a dash
    */
   String[][] next(String[] args) {
     if (args == null || args.length == 0)
@@ -141,7 +138,7 @@ public class ParsedArgsFactory {
       List<String> values = m.get(key);
       if (values == null)
         values = new ArrayList<String>();
-      for (int i = 1; i < group.length; i += 1)
+      for (int i = 1; i < group.length; i++)
         values.add(group[i]);
       m.put(key, values);
     }
