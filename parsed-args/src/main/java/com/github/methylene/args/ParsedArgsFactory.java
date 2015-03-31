@@ -1,6 +1,7 @@
 package com.github.methylene.args;
 
 import java.util.*;
+import java.util.regex.Pattern;
 
 import static java.util.Arrays.copyOf;
 
@@ -8,6 +9,8 @@ import static com.github.methylene.args.Util.nthrest;
 import static com.github.methylene.args.Util.rest;
 
 public class ParsedArgsFactory {
+
+  public static final Pattern NUMBERS = Pattern.compile("[0-9]+");
 
   /**
    * <p>Split the argument into two arrays: The first "short option" group, and all remaining arguments.
@@ -36,13 +39,26 @@ public class ParsedArgsFactory {
     if (args == null || args.length == 0)
       throw new IllegalArgumentException("empty input");
     if (args[0].length() > 2) { //TODO: cases number vs multiple boolean args
-      return new String[][]{
-          new String[]{
-              args[0].substring(0, 2),
-              args[0].substring(2)
-          },
-          rest(args)
-      };
+      if (NUMBERS.matcher(Character.toString(args[0].charAt(2))).matches()) {
+        if (!NUMBERS.matcher(args[0].substring(2)).matches())
+          throw new IllegalArgumentException();
+        return new String[][]{
+            new String[]{
+                args[0].substring(0, 2),
+                args[0].substring(2)
+            },
+            rest(args)
+        };
+      } else {
+        String[] head = {
+            args[0].substring(0, 2),
+        };
+        args[0] = "-" + args[0].substring(2);
+        return new String[][]{
+            head,
+            args
+        };
+      }
     }
     if (args.length == 1 || args[1].startsWith("-")) {
       return new String[][]{

@@ -1,6 +1,7 @@
 package com.github.methylene.args;
 
 import static com.github.methylene.args.ParsedArgs.factory;
+import static java.util.Collections.singletonList;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -60,8 +61,8 @@ public class ParsedArgsTest {
 
   @Test
   public void testGetLong() throws Exception {
-    assertEquals(asList("1"), factory().parse("--num=1", "-1").get("num"));
-    assertEquals(asList("1"), factory().parse("-m1", "--num=1", "-1").get("num"));
+    assertEquals(singletonList("1"), factory().parse("--num=1", "-1").get("num"));
+    assertEquals(singletonList("1"), factory().parse("-m1", "--num=1", "-1").get("num"));
   }
 
   @Test(expected = IllegalArgumentException.class)
