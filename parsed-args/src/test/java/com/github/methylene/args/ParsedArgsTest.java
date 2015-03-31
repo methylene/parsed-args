@@ -45,7 +45,8 @@ public class ParsedArgsTest {
   public void testDash() throws Exception {
     assertTrue(factory().parse("-").contains("-"));
     assertTrue(factory().parse("-1", "-", "-2").contains("-"));
-    assertEquals(asList("-2"), factory().parse("-1", "--", "-2").get("--"));
+    assertEquals("-2", factory().parse("-1", "--", "-2").get("--"));
+    assertEquals(asList("-2", "-3"), factory().parse("-1", "--", "-2", "-3").get("--"));
   }
 
   @Test
@@ -61,8 +62,8 @@ public class ParsedArgsTest {
 
   @Test
   public void testGetLong() throws Exception {
-    assertEquals(singletonList("1"), factory().parse("--num=1", "-1").get("num"));
-    assertEquals(singletonList("1"), factory().parse("-m1", "--num=1", "-1").get("num"));
+    assertEquals("1", factory().parse("--num=1", "-1").get("num"));
+    assertEquals("1", factory().parse("-m1", "--num=1", "-1").get("num"));
   }
 
   @Test(expected = IllegalArgumentException.class)

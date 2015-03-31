@@ -3,10 +3,11 @@ package com.github.methylene.args;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class ParsedArgs {
 
-  private final Map<String, List<String>> parsed;
+  private final Map<String, Object> parsed;
 
   private static final ParsedArgsFactory FACTORY = new ParsedArgsFactory();
 
@@ -14,7 +15,7 @@ public class ParsedArgs {
     return FACTORY;
   }
 
-  ParsedArgs(Map<String, List<String>> parsed) {
+  ParsedArgs(Map<String, Object> parsed) {
     this.parsed = parsed;
   }
 
@@ -28,7 +29,7 @@ public class ParsedArgs {
     return "--" + arg;
   }
 
-  public List<String> get(String arg) {
+  public Object get(String arg) {
     return parsed.get(mapKey(arg));
   }
 
@@ -37,15 +38,10 @@ public class ParsedArgs {
   }
 
   public int getInt(String arg, Integer defaultValue) {
-    List<String> n = get(arg);
-    if (n == null || n.size() == 0)
-      if (defaultValue != null)
-        return defaultValue;
-      else
-        throw new IllegalArgumentException("no value: " + arg);
-    if (n.size() > 1)
-      throw new IllegalArgumentException("multiple values: " + arg + ": " + n);
-    return Integer.parseInt(n.get(0));
+    Object n = get(arg);
+    if (!(n instanceof String))
+      throw new IllegalArgumentException("not a string: " + arg + " == " + n);
+    return Integer.parseInt((String) n);
   }
 
   public int getInt(String arg) {

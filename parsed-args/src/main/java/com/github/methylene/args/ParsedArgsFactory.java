@@ -1,12 +1,14 @@
 package com.github.methylene.args;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
-
-import static java.util.Arrays.copyOf;
 
 import static com.github.methylene.args.Util.nthrest;
 import static com.github.methylene.args.Util.rest;
+import static java.util.Arrays.copyOf;
 
 public class ParsedArgsFactory {
 
@@ -41,7 +43,7 @@ public class ParsedArgsFactory {
     if (args[0].length() > 2) { //TODO: cases number vs multiple boolean args
       if (NUMBERS.matcher(Character.toString(args[0].charAt(2))).matches()) {
         if (!NUMBERS.matcher(args[0].substring(2)).matches())
-          throw new IllegalArgumentException();
+          throw new IllegalArgumentException("mixing numbers and characters: " + args[0]);
         return new String[][]{
             new String[]{
                 args[0].substring(0, 2),
@@ -134,7 +136,7 @@ public class ParsedArgsFactory {
   String[][] next(String[] args) {
     if (args == null || args.length == 0)
       return null;
-    if (!args[0].startsWith("-")) // only single character option names allowed
+    if (!args[0].startsWith("-"))
       throw new IllegalArgumentException("option name must start with a dash: " + args[0]);
     if ("-".equals(args[0]))
       return new String[][]{new String[]{"-"}, rest(args)};
@@ -145,18 +147,33 @@ public class ParsedArgsFactory {
     return nextShort(args);
   }
 
-  private Map<String, List<String>> parseMap(String[] args) {
-    HashMap<String, List<String>> m = new HashMap<String, List<String>>();
+  @SuppressWarnings("unchecked")
+  private Map<String, Object> parseMap(String[] args) {
+    Map<String, Object> m = new LinkedHashMap<String, Object>();
+    if (args.length >= 1 && !args[0].startsWith("-"))
+      args[0] = "-" + args[0];
     String[][] state = new String[][]{null, args};
     while ((state = next(state[1])) != null) {
       String[] group = state[0];
       String key = group[0];
-      List<String> values = m.get(key);
-      if (values == null)
-        values = new ArrayList<String>();
-      for (int i = 1; i < group.length; i++)
-        values.add(group[i]);
-      m.put(key, values);
+      Object values = m.get(key);
+      for (int i = 1; i < group.length; i++) {
+        if (values instanceof Boolean)
+          throw new IllegalArgumentException("repeating flag: " + key);
+        if (values instanceof String) {
+          String tmp = (String) values;
+          values = new ArrayList<String>();
+          ((List<String>) values).add(tmp);
+        }
+        if (values == null)
+          values = new ArrayList<String>();
+        ((List<String>) values).add(group[i]);
+      }
+      if (values instanceof Boolean)
+        throw new IllegalArgumentException("repeating flag: " + key);
+      if (values instanceof String)
+        throw new IllegalArgumentException("re-using key as flag: " + key);
+      m.put(key, values == null ? Boolean.TRUE : ((List<String>) values).size() == 1 ? ((List<String>) values).get(0) : values);
     }
     return m;
   }
