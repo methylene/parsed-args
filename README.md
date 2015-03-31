@@ -6,13 +6,13 @@ In fact, there aren't currently any configuration options.
 
 Try it out using parse.sh:
 
-    $ ./parse.sh xzf --day 2015-03-01 --day 2015-03-02 --include=**/* - -a -- -x -y -z
-    [xzf, --day, 2015-03-01, --day, 2015-03-02, --include=**/*, -, -a, --, -x, -y, -z]
+    $ ./parse.sh xzf -a 1 -n100 --day 2015-03-01 --day 2015-03-02 --include=**/* - -- -x -y -z
     -x -> true (Boolean)
     -z -> true (Boolean)
     -f -> true (Boolean)
+    -a -> 1 (String)
+    -n -> 100 (String)
     --day -> [2015-03-01, 2015-03-02] (ArrayList)
     --include -> **/* (String)
     - -> true (Boolean)
-    -a -> true (Boolean)
     -- -> [-x, -y, -z] (ArrayList)
