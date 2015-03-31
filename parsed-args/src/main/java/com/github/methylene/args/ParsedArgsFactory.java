@@ -10,38 +10,17 @@ import static com.github.methylene.args.Util.nthrest;
 import static com.github.methylene.args.Util.rest;
 import static java.util.Arrays.copyOf;
 
-public class ParsedArgsFactory {
+final class ParsedArgsFactory {
 
-  public static final Pattern NUMBERS = Pattern.compile("[0-9]+");
+  private ParsedArgsFactory() {}
 
-  /**
-   * <p>Split the argument into two arrays: The first "short option" group, and all remaining arguments.
-   * A short option group starts with a single dash, followed by single character called the option name.</p>
-   * <p/>
-   * <p>If the option name is immediately followed by more characters,
-   * these are treated as the value of the option group. This is called an abbreviated short option.</p>
-   * <p/>
-   * <p>If the short option group is not abbreviated, more tokens are added to the group until the input is
-   * exhausted or the first token starting with a dash is encountered.</p>
-   * <p/>
-   * <p>The following are equivalent:</p>
-   * <p/>
-   * <pre><code>
-   *   nextShort(new String[]{"-n2"}); // abbreviated short option
-   *   nextShort(new String[]{"-n", "2"}); // short option
-   * </code></pre>
-   * <p/>
-   * <p>The input of this method must not be empty.</p>
-   *
-   * @param args arguments array
-   * @return split into first option group and rest
-   * @throws java.lang.IllegalArgumentException if {@code args} is empty
-   */
-  String[][] nextShort(String[] args) {
+  static final Pattern NUMBERS = Pattern.compile("[0-9]+");
+
+  static String[][] nextShort(String[] args) {
     if (args == null || args.length == 0)
       throw new IllegalArgumentException("empty input");
-    if (args[0].length() > 2) { //TODO: cases number vs multiple boolean args
-      if (NUMBERS.matcher(Character.toString(args[0].charAt(2))).matches()) {
+    if (args[0].length() > 2) {
+      if (Character.isDigit(args[0].charAt(2))) {
         if (!NUMBERS.matcher(args[0].substring(2)).matches())
           throw new IllegalArgumentException("mixing numbers and characters: " + args[0]);
         return new String[][]{
@@ -52,6 +31,11 @@ public class ParsedArgsFactory {
             rest(args)
         };
       } else {
+        for (int i = 3; i < args[0].length(); i++)
+          if (Character.isDigit(args[0].charAt(i)))
+            throw new IllegalArgumentException("mixing numbers and characters: " + args[0]);
+        if (args.length > 1 && !args[1].startsWith("-"))
+          throw new IllegalArgumentException("ambiguous association: " + args[1]);
         String[] head = {
             args[0].substring(0, 2),
         };
@@ -71,23 +55,7 @@ public class ParsedArgsFactory {
     return new String[][]{copyOf(args, 2), nthrest(args, 2)};
   }
 
-
-  /**
-   * <p>Split the argument into two arrays: The first "long option" group, and all remaining arguments.
-   * A long option group starts with two dashes, followed by a string of length greater than 1, called the option name.
-   * </p>
-   * <p/>
-   * <p>If the option name contains the equals sign {@code '='}, the remaining characters after the equals sign
-   * form the option value, and the group ends.</p>
-   * <p/>
-   * <p>Otherwise more tokens are added to the group until the input is
-   * exhausted or the first token starting with a dash is encountered.</p>
-   *
-   * @param args arguments array
-   * @return split into first option group and rest
-   * @throws java.lang.IllegalArgumentException if {@code args} is empty
-   */
-  String[][] nextLong(String[] args) {
+  static String[][] nextLong(String[] args) {
     if (args == null || args.length == 0)
       throw new IllegalArgumentException("empty input");
     int idx = args[0].indexOf('=');
@@ -119,21 +87,7 @@ public class ParsedArgsFactory {
     }
   }
 
-  /**
-   * <p>Split the first argument group from the remaining groups.</p>
-   * <p>Any argument that starts with a dash marks the beginning of an argument group.</p>
-   * <p>There are two "special" tokens: {@code '-'} and {@code '--'}.</p>
-   * <p>{@code '-'} becomes the group name of an argument group without any argument values.</p>
-   * <p>{@code '--'} becomes the group name of an argument group containing all remaining arguments,
-   * regardless whether they start with a dash or not.</p>
-   *
-   * @param args an argument array
-   * @return if args is not empty,
-   * an array of length 2, containing the first group and the remaining arguments
-   * @throws java.lang.IllegalArgumentException if {@code args} is not empty and
-   *                                            {@code args[0]} does not start with a dash
-   */
-  String[][] next(String[] args) {
+  static String[][] next(String[] args) {
     if (args == null || args.length == 0)
       return null;
     if (!args[0].startsWith("-"))
@@ -148,7 +102,7 @@ public class ParsedArgsFactory {
   }
 
   @SuppressWarnings("unchecked")
-  private Map<String, Object> parseMap(String[] args) {
+  static Map<String, Object> parse(String[] args) {
     Map<String, Object> m = new LinkedHashMap<String, Object>();
     if (args.length >= 1 && !args[0].startsWith("-"))
       args[0] = "-" + args[0];
@@ -176,10 +130,6 @@ public class ParsedArgsFactory {
       m.put(key, values == null ? Boolean.TRUE : ((List<String>) values).size() == 1 ? ((List<String>) values).get(0) : values);
     }
     return m;
-  }
-
-  public ParsedArgs parse(String... s) {
-    return new ParsedArgs(parseMap(s));
   }
 
 }

@@ -6,7 +6,7 @@ public class PrintArgs {
 
   public static void main(String[] args) {
     try {
-      ParsedArgs parsedArgs = ParsedArgs.factory().parse(args);
+      ParsedArgs parsedArgs = ParsedArgs.parse(args);
       for (String key : parsedArgs.getKeys()) {
         Object val = parsedArgs.get(key);
         System.out.format("%s -> %s (%s)%n", key, val, val.getClass().getSimpleName());
