@@ -14,14 +14,15 @@ final class ParsedArgsFactory {
 
   private ParsedArgsFactory() {}
 
-  static final Pattern NUMBERS = Pattern.compile("[0-9]+");
+  static final Pattern NUMERIC = Pattern.compile("[0-9\\-.,]+");
 
   static String[][] nextShort(String[] args) {
     if (args == null || args.length == 0)
       throw new IllegalArgumentException("empty input");
     if (args[0].length() > 2) {
-      if (Character.isDigit(args[0].charAt(2))) {
-        if (!NUMBERS.matcher(args[0].substring(2)).matches())
+      char char2 = args[0].charAt(2);
+      if (Character.isDigit(char2) || char2 == '-' || char2 == '.' || char2 == ',') {
+        if (!NUMERIC.matcher(args[0].substring(2)).matches())
           throw new IllegalArgumentException("mixing numbers and characters: " + args[0]);
         return new String[][]{
             new String[]{

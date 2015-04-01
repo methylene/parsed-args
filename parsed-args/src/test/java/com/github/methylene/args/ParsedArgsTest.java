@@ -47,8 +47,8 @@ public class ParsedArgsTest {
   public void testDash() throws Exception {
     assertTrue(parse("-").getFlag("-"));
     assertTrue(parse("-1", "-", "-2").getFlag("-"));
-    assertEquals("-2", parse("-1", "--", "-2").get("--"));
-    assertEquals(asList("-2", "-3"), parse("-1", "--", "-2", "-3").get("--"));
+    assertEquals("-2", parse("-1", "--", "-2").getObject("--"));
+    assertEquals(asList("-2", "-3"), parse("-1", "--", "-2", "-3").getObject("--"));
   }
 
   @Test
@@ -64,8 +64,8 @@ public class ParsedArgsTest {
 
   @Test
   public void testGetLong() throws Exception {
-    assertEquals("1", parse("--num=1", "-1").get("num"));
-    assertEquals("1", parse("-m1", "--num=1", "-1").get("num"));
+    assertEquals("1", parse("--num=1", "-1").getObject("num"));
+    assertEquals("1", parse("-m1", "--num=1", "-1").getObject("num"));
   }
 
   @Test(expected = IllegalArgumentException.class)
