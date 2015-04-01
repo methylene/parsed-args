@@ -68,6 +68,11 @@ public class ParsedArgsTest {
     assertEquals("1", parse("-m1", "--num=1", "-1").getObject("num"));
   }
 
+  @Test
+  public void testPlus() {
+    assertThat(parse("+%%").getString("+"), is("%%"));
+  }
+
   @Test(expected = IllegalArgumentException.class)
   public void testLongInvalid() {
     parse("--num=1", "1");

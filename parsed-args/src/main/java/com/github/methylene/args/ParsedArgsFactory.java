@@ -14,14 +14,24 @@ final class ParsedArgsFactory {
 
   private ParsedArgsFactory() {}
 
-  static final Pattern NUMERIC = Pattern.compile("[0-9\\-.,]+");
+  static final Pattern NUMERIC = Pattern.compile("[0-9\\-.,+]+");
+
+  static boolean shortOpt(char c) {
+    return Character.isDigit(c) || c == '-' || c == '.' || c == ',' || c == '+';
+  }
+
+  static boolean startsOpt(String opt) {
+    if (opt.length() == 0)
+      return false;
+    char char0 = opt.charAt(0);
+    return char0 == '-' || char0 == '+' && opt.length() > 1;
+  }
 
   static String[][] nextShort(String[] args) {
     if (args == null || args.length == 0)
       throw new IllegalArgumentException("empty input");
     if (args[0].length() > 2) {
-      char char2 = args[0].charAt(2);
-      if (Character.isDigit(char2) || char2 == '-' || char2 == '.' || char2 == ',') {
+      if (shortOpt(args[0].charAt(2))) {
         if (!NUMERIC.matcher(args[0].substring(2)).matches())
           throw new IllegalArgumentException("mixing numbers and characters: " + args[0]);
         return new String[][]{
@@ -33,9 +43,9 @@ final class ParsedArgsFactory {
         };
       } else {
         for (int i = 3; i < args[0].length(); i++)
-          if (Character.isDigit(args[0].charAt(i)))
+          if (shortOpt(args[0].charAt(i)))
             throw new IllegalArgumentException("mixing numbers and characters: " + args[0]);
-        if (args.length > 1 && !args[1].startsWith("-"))
+        if (args.length > 1 && !startsOpt(args[1]))
           throw new IllegalArgumentException("ambiguous association: " + args[1]);
         String[] head = {
             args[0].substring(0, 2),
@@ -78,7 +88,7 @@ final class ParsedArgsFactory {
         };
       }
     } else {
-      if (args.length == 1 || args[1].startsWith("-")) {
+      if (args.length == 1 || startsOpt(args[1])) {
         return new String[][]{
             copyOf(args, 1),
             rest(args)
@@ -91,21 +101,23 @@ final class ParsedArgsFactory {
   static String[][] next(String[] args) {
     if (args == null || args.length == 0)
       return null;
-    if (!args[0].startsWith("-"))
-      throw new IllegalArgumentException("option name must start with a dash: " + args[0]);
+    if (!startsOpt(args[0]))
+      throw new IllegalArgumentException("invalid option: " + args[0]);
     if ("-".equals(args[0]))
       return new String[][]{new String[]{"-"}, rest(args)};
     if ("--".equals(args[0]))
       return new String[][]{args, null};
     if (args[0].startsWith("--"))
       return nextLong(args);
+    if (args[0].startsWith("+"))
+      return new String[][]{new String[]{"+", args[0].substring(1)}, rest(args)};
     return nextShort(args);
   }
 
   @SuppressWarnings("unchecked")
   static Map<String, Object> parse(String[] args) {
     Map<String, Object> m = new LinkedHashMap<String, Object>();
-    if (args.length >= 1 && !args[0].startsWith("-"))
+    if (args.length >= 1 && !startsOpt(args[0]))
       args[0] = "-" + args[0];
     String[][] state = new String[][]{null, args};
     while ((state = next(state[1])) != null) {

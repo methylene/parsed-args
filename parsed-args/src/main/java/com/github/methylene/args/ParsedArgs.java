@@ -13,7 +13,7 @@ public final class ParsedArgs {
   static String mapKey(String arg) {
     if (arg == null || arg.length() == 0)
       throw new IllegalArgumentException("no input");
-    if (arg.startsWith("-"))
+    if (arg.charAt(0) == '-' || arg.charAt(0) == '+')
       return arg;
     if (arg.length() == 1)
       return "-" + arg;
@@ -45,10 +45,10 @@ public final class ParsedArgs {
     throw new IllegalArgumentException("cannot coerce to list: " + arg + " == " + o);
   }
 
-  public Boolean getFlag(String arg) {
+  public boolean getFlag(String arg) {
     Object o = parsed.get(mapKey(arg));
     if (o == null)
-      return null;
+      return false;
     if (o instanceof Boolean)
       return (Boolean) o;
     throw new IllegalArgumentException("cannot coerce to boolean: " + arg + " == " + o);
