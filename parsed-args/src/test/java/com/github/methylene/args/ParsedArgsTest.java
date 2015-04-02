@@ -1,86 +1,93 @@
 package com.github.methylene.args;
 
-import static com.github.methylene.args.ParsedArgs.parse;
+import org.junit.Test;
+
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-
-import static org.hamcrest.CoreMatchers.is;
-import org.junit.Test;
 
 public class ParsedArgsTest {
 
+  private ArgParser parser = ArgParser.parser();
+
   @Test
-  public void testGetInt() throws Exception {
-    assertThat(parse("-n", "1").getNumber("n"), is(1L));
-    assertThat(parse("-n1").getNumber("n"), is(1L));
-    assertThat(parse("-m1", "-n1").getNumber("n"), is(1L));
-    assertThat(parse("-m1", "-n", "1").getNumber("n"), is(1L));
-    assertThat(parse("-m", "-n1", "-c").getNumber("n"), is(1L));
-    assertThat(parse("-m", "-n", "1", "-c1").getNumber("n"), is(1L));
-    assertThat(parse("-m", "1", "-n1", "-c").getNumber("n"), is(1L));
-  }
-
-
-  @Test(expected = IllegalArgumentException.class)
-  public void testDash2() throws Exception {
-    parse("-n1", "1");
+  public void testGetInt() {
+    assertThat(parser.parse("-n", "1").getNumber("-n"), is(1L));
+    assertThat(parser.parse("-n1").getNumber("-n"), is(1L));
+    assertThat(parser.parse("-m1", "-n1").getNumber("-n"), is(1L));
+    assertThat(parser.parse("-m1", "-n", "1").getNumber("-n"), is(1L));
+    assertThat(parser.parse("-m", "-n1", "-c").getNumber("-n"), is(1L));
+    assertThat(parser.parse("-m", "-n", "1", "-c1").getNumber("-n"), is(1L));
+    assertThat(parser.parse("-m", "1", "-n1", "-c").getNumber("-n"), is(1L));
   }
 
   @Test(expected = IllegalArgumentException.class)
-  public void testFail() throws Exception {
-    parse("-n").getNumber("n");
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void testFail2() throws Exception {
-    parse("-n1", "1").getNumber("n");
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void testFail3() throws Exception {
-    parse("-n", "1", "2").getNumber("n");
+  public void testFail() {
+    parser.parse("-n").getNumber("-n");
   }
 
   @Test
-  public void testDash() throws Exception {
-    assertTrue(parse("-").getFlag("-"));
-    assertTrue(parse("-1", "-", "-2").getFlag("-"));
-    assertEquals("-2", parse("-1", "--", "-2").getObject("--"));
-    assertEquals(asList("-2", "-3"), parse("-1", "--", "-2", "-3").getObject("--"));
+  public void testFail2() {
+    assertThat(parser.parse("-n1", "1").getNumber("-n"), is(1L));
   }
 
   @Test
-  public void testLong() throws Exception {
-    assertThat(parse("--num", "1").getNumber("num"), is(1L));
-    assertThat(parse("--num=1").getNumber("num"), is(1L));
-    assertThat(parse("-m1", "--num=1").getNumber("num"), is(1L));
-    assertThat(parse("-m1", "--num", "1").getNumber("num"), is(1L));
-    assertThat(parse("-m", "--num=1", "-c").getNumber("num"), is(1L));
-    assertThat(parse("-m", "--num", "1", "-c1").getNumber("num"), is(1L));
-    assertThat(parse("-m", "1", "--num=1", "-c").getNumber("num"), is(1L));
+  public void testFail3() {
+    assertThat(parser.parse("-n", "1").getNumber("-n"), is(1L));
+    assertThat(parser.parse("-n", "1", "2").getNumber("-n"), is(1L));
   }
 
   @Test
-  public void testGetLong() throws Exception {
-    assertEquals("1", parse("--num=1", "-1").getObject("num"));
-    assertEquals("1", parse("-m1", "--num=1", "-1").getObject("num"));
+  public void testDash() {
+    assertThat(parser.parse("-").getFlag("-"), is(1));
+    assertThat(parser.parse("-1", "-", "-2").getFlag("-"), is(1));
+    assertEquals(singletonList("-2"), parser.parse("-1", "--", "-2").getList("--"));
+    assertEquals(asList("-2", "-3"), parser.parse("-1", "--", "-2", "-3").getList("--"));
+  }
+
+  @Test
+  public void testLong() {
+    assertThat(parser.parse("-m", "--num=1", "-c").getNumber("--num"), is(1L));
+  }
+
+  @Test
+  public void testLong2() {
+    assertThat(parser.parse("--num", "1").getNumber("--num"), is(1L));
+    assertThat(parser.parse("--num=1").getNumber("--num"), is(1L));
+    assertThat(parser.parse("-m1", "--num=1").getNumber("--num"), is(1L));
+    assertThat(parser.parse("-m1", "--num", "1").getNumber("--num"), is(1L));
+    assertThat(parser.parse("-m", "--num=1", "-c").getNumber("--num"), is(1L));
+    assertThat(parser.parse("-m", "--num", "1", "-c1").getNumber("--num"), is(1L));
+    assertThat(parser.parse("-m", "1", "--num=1", "-c").getNumber("--num"), is(1L));
+  }
+
+  @Test
+  public void testFlag() {
+    assertThat(parser.parse("-m", "--num=1", "-c").getFlag("-m"), is(1));
+  }
+
+  @Test
+  public void testGetLong() {
+    assertEquals("1", parser.parse("--num=1", "-1").getString("--num"));
+    assertEquals("1", parser.parse("-m1", "--num=1", "-1").getString("--num"));
   }
 
   @Test
   public void testPlus() {
-    assertThat(parse("+%%").getString("+"), is("%%"));
+    assertThat(parser.parse("+%%").getString("+"), is("%%"));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testLongInvalid() {
-    parse("--num=1", "1");
+    assertThat(parser.parse("--num=1", "1").getNumber("--num"), is(1L));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testLongInvalid2() {
-    parse("-m1", "--num=1", "1");
+    assertThat(parser.parse("-m1", "--num=1", "1").getNumber("--num"), is(1L));
+    assertThat(parser.parse("-m1", "--num=1", "1").getNumber("-m"), is(1L));
   }
 
 

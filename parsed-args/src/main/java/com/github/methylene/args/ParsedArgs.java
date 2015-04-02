@@ -4,63 +4,56 @@ import java.util.*;
 
 public final class ParsedArgs {
 
-  private final Map<String, Object> parsed;
+  private final Map<String, List<Token>> parsed;
 
-  private ParsedArgs(Map<String, Object> parsed) {
+  ParsedArgs(Map<String, List<Token>> parsed) {
     this.parsed = Collections.unmodifiableMap(parsed);
   }
 
-  static String mapKey(String arg) {
-    if (arg == null || arg.length() == 0)
-      throw new IllegalArgumentException("no input");
-    if (arg.charAt(0) == '-' || arg.charAt(0) == '+')
-      return arg;
-    if (arg.length() == 1)
-      return "-" + arg;
-    return "--" + arg;
-  }
-
-  public Object getObject(String arg) {
-    return parsed.get(mapKey(arg));
-  }
-
-  public String getString(String arg) {
-    Object o = parsed.get(mapKey(arg));
+  public List<String> getList(String key) {
+    List<Token> o = parsed.get(key);
     if (o == null)
       return null;
-    if (o instanceof String)
-      return (String) o;
-    throw new IllegalArgumentException("cannot coerce to string: " + arg + " == " + o);
+    List<String> result = new ArrayList<String>();
+    for (Token arg: o) {
+      for (TokenValue val: arg.getValues()) {
+        if (val.isFlag())
+          throw new IllegalArgumentException("cannot read as string: " + arg);
+        result.add(val.getVal());
+      }
+    }
+    return result;
   }
 
-  @SuppressWarnings("unchecked")
-  public List<String> getList(String arg) {
-    Object o = parsed.get(mapKey(arg));
+  public String getString(String key) {
+    List<String> o = getList(key);
     if (o == null)
       return null;
-    if (o instanceof String)
-      return Collections.singletonList((String) o);
-    if (o instanceof List)
-      return (List<String>) o;
-    throw new IllegalArgumentException("cannot coerce to list: " + arg + " == " + o);
+    if (o.size() != 1)
+      throw new IllegalArgumentException("multiple values: " + key + ": " + o);
+    return o.get(0);
   }
 
-  public boolean getFlag(String arg) {
-    Object o = parsed.get(mapKey(arg));
+  public Integer getFlag(String key) {
+    List<Token> o = parsed.get(key);
     if (o == null)
-      return false;
-    if (o instanceof Boolean)
-      return (Boolean) o;
-    throw new IllegalArgumentException("cannot coerce to boolean: " + arg + " == " + o);
+      return null;
+    int n = 0;
+    for (Token arg: o) {
+      for (TokenValue val: arg.getValues()) {
+        if (!val.isFlag())
+          throw new IllegalArgumentException("cannot read as flag: " + arg);
+        n++;
+      }
+    }
+    return n;
   }
 
   public Long getNumber(String arg, Long defaultValue) {
-    Object n = getObject(arg);
+    String n = getString(arg);
     if (n == null)
       return defaultValue;
-    if (!(n instanceof String))
-      throw new IllegalArgumentException("cannot coerce to int: " + arg + " == " + n);
-    return Long.parseLong((String) n);
+    return Long.parseLong(n);
   }
 
   public Long getNumber(String arg) {
@@ -71,11 +64,7 @@ public final class ParsedArgs {
     return new ArrayList<String>(parsed.keySet());
   }
 
-  public static ParsedArgs parse(String... args) {
-    return new ParsedArgs(ParsedArgsFactory.parse(args));
-  }
-
-  public Map<String, Object> getMap() {
+  public Map<String, List<Token>> getMap() {
     return parsed;
   }
 

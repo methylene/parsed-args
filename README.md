@@ -1,21 +1,46 @@
 # parsed-args
 
 Very simple command line argument parser in Java.
-It just parses the arguments into a map, or throws an exception.
+Its goal is to parse the arguments into a map, or throw an exception.
 
-It is not possible to specify mandatory arguments, or register converters and validators.
-This is outside the scope of this library, because validation can be done after parsing.
+Please note that it is not possible to specify mandatory arguments,
+or register converters and validators.
+These things are outside the scope of this library.
 
-Try it out using `parse.sh`:
+There is a script `parse.sh` which reads any number of arguments and prints their map interpretation:
 
-    $ ./parse.sh xJf -a 1 -n+2 --day 01 --day 02 +%% --include=**/* - -- -x -y
+    $ ./parse.sh xJf -a 1 -n+2-3 +%% +%f --day=1 --day 2 - -- -x -y
     -x -> true (Boolean)
     -J -> true (Boolean)
     -f -> true (Boolean)
     -a -> 1 (String)
-    -n -> +2 (String)
-    --day -> [01, 02] (ArrayList)
-    + -> %% (String)
-    --include -> **/* (String)
+    -n -> +2-3 (String)
+    + -> [%%, %f] (ArrayList)
+    --day -> [1, 2] (ArrayList)
     - -> true (Boolean)
     -- -> [-x, -y] (ArrayList)
+
+The example above passes the 13 tokens `xJf`, `-a`, `1`, `-n+2-3`, `+%%`, `+%f`, `--day=1`,
+`--day`, `2`, `-`, `--`, `-x` and `-y` to `parse.sh`. Some of these have a special meaning.
+
+
+### `-`
+
+This is a self contained literal token that does not put the reader in literal mode.
+It can appear at most once, otherwise parsing fails.
+
+### `--`
+
+All remaining tokens after this one are treated as arguments
+
+### Tokens that begin with `-` or `--` but are
+
+
+
+### BSD style flags
+
+TODO allow bsd style flags everywhere
+
+The very first argument 
+
+Example:
