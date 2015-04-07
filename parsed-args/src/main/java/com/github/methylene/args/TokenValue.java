@@ -3,7 +3,7 @@ package com.github.methylene.args;
 public class TokenValue {
 
   enum ValType {
-    VAL, FLAG
+    VALUE, FLAG
   }
 
   private static final TokenValue FLAG = new TokenValue(null, ValType.FLAG);
@@ -19,7 +19,7 @@ public class TokenValue {
   public static TokenValue create(String val) {
     if (val == null)
       throw new IllegalArgumentException("val can not be null");
-    return new TokenValue(val, ValType.VAL);
+    return new TokenValue(val, ValType.VALUE);
   }
 
   public static TokenValue create() {

@@ -6,6 +6,10 @@ public final class ParsedArgs {
 
   private final Map<String, List<Token>> parsed;
 
+  public enum ArgType {
+    FLAG, VALUE, NOTHING, MIXED
+  }
+
   ParsedArgs(Map<String, List<Token>> parsed) {
     this.parsed = Collections.unmodifiableMap(parsed);
   }
@@ -66,6 +70,18 @@ public final class ParsedArgs {
     } catch (RuntimeException e) {
       return GetResult.failure(e.getMessage());
     }
+  }
+
+  public ArgType getType(String key) {
+    List<Token> o = parsed.get(key);
+    if (o == null)
+      return ArgType.NOTHING;
+    TokenValue.ValType type = o.get(0).getValues().get(0).getType();
+    for (Token arg : o)
+      for (TokenValue val : arg.getValues())
+        if (val.getType() != type)
+          return ArgType.MIXED;
+    return type == TokenValue.ValType.FLAG ? ArgType.FLAG : ArgType.VALUE;
   }
 
   public GetResult<Long> getNumber(String arg) {

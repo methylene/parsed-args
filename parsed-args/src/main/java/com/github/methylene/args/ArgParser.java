@@ -22,7 +22,7 @@ public class ArgParser {
     }
 
     static Expectation expect(String field, String message, Predicate<List<Token>> predicate) {
-      return new Expectation(TokenValue.ValType.VAL, field, message, predicate);
+      return new Expectation(TokenValue.ValType.VALUE, field, message, predicate);
     }
 
     static Expectation expectSingleFlag(String field) {
