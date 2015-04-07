@@ -1,35 +1,27 @@
 package com.github.methylene.args;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Queue;
-
-import static com.github.methylene.args.Util.DASHED_TOKEN;
-import static com.github.methylene.args.Util.UNIX_NUMERIC_TOKEN;
-import static com.github.methylene.args.Util.EQUALS_TOKEN;
-import static com.github.methylene.args.predicate.Predicates.*;
 
 
 public final class Tokenizer {
 
-  private final Predicate weakBinding;
-  private final Predicate strongBinding;
-  private final Predicate atomic;
+  private final Predicate<String> weakBinding;
+  private final Predicate<String> strongBinding;
+  private final Predicate<String> atomic;
 
-  private Tokenizer(Predicate weakBinding, Predicate strongBinding, Predicate atomic) {
+  private Tokenizer(Predicate<String> weakBinding, Predicate<String> strongBinding, Predicate<String> atomic) {
     this.weakBinding = weakBinding;
     this.strongBinding = strongBinding;
     this.atomic = atomic;
   }
 
-  public static Tokenizer create(Predicate weakBinding, Predicate strongBinding, Predicate atomic) {
+  public static Tokenizer create(Predicate<String> weakBinding, Predicate<String> strongBinding, Predicate<String> atomic) {
     return new Tokenizer(weakBinding, strongBinding, atomic);
   }
 
-  public static Tokenizer create() {
-    return create(matches(DASHED_TOKEN), nothing(), or(is("-"), is("+"), matches(UNIX_NUMERIC_TOKEN), matches(EQUALS_TOKEN)));
-  }
-
-  public Token read(Queue<Argument> queue) {
+  private Token read(Queue<Argument> queue) {
     if (queue.isEmpty())
       return null;
     Argument token = queue.poll();
@@ -59,4 +51,47 @@ public final class Tokenizer {
 
   }
 
+  public Iterable<Token> tokenize(final String[] args) {
+    return tokenize(Util.toQueue(args));
+  }
+
+  public Iterable<Token> tokenize(final Queue<Argument> queue) {
+    return new Iterable<Token>() {
+      @Override
+      public Iterator<Token> iterator() {
+        return new Iterator<Token>() {
+          boolean started = false;
+          private Token next = null;
+
+          @Override
+          public boolean hasNext() {
+            if (!started) {
+              started = true;
+              next = read(queue);
+            }
+            return next != null;
+          }
+
+          @Override
+          public Token next() {
+            Token tmp = next;
+            this.next = read(queue);
+            return tmp;
+          }
+        };
+      }
+    };
+  }
+
+  public Predicate<String> getWeakBinding() {
+    return weakBinding;
+  }
+
+  public Predicate<String> getStrongBinding() {
+    return strongBinding;
+  }
+
+  public Predicate<String> getAtomic() {
+    return atomic;
+  }
 }

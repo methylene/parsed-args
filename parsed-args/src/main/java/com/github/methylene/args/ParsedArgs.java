@@ -10,53 +10,65 @@ public final class ParsedArgs {
     this.parsed = Collections.unmodifiableMap(parsed);
   }
 
-  public List<String> getList(String key) {
+  public GetResult<List<String>> getValues(String key) {
     List<Token> o = parsed.get(key);
     if (o == null)
-      return null;
+      return GetResult.success(Collections.<String>emptyList());
     List<String> result = new ArrayList<String>();
-    for (Token arg: o) {
-      for (TokenValue val: arg.getValues()) {
+    for (Token arg : o) {
+      for (TokenValue val : arg.getValues()) {
         if (val.isFlag())
-          throw new IllegalArgumentException("cannot read as string: " + arg);
-        result.add(val.getVal());
+          return GetResult.failure("got flag but was expecting value");
+        result.add(val.getValue());
       }
     }
-    return result;
+    return GetResult.success(result);
   }
 
-  public String getString(String key) {
-    List<String> o = getList(key);
-    if (o == null)
-      return null;
-    if (o.size() != 1)
-      throw new IllegalArgumentException("multiple values: " + key + ": " + o);
-    return o.get(0);
+  public GetResult<String> getString(String key) {
+    GetResult<List<String>> o = getValues(key);
+    if (o.isFailure())
+      return GetResult.failure(o.getMessage());
+    if (o.get().size() != 1)
+      return GetResult.failure("multiple values");
+    return GetResult.success(o.get().get(0));
   }
 
-  public Integer getFlag(String key) {
+  public GetResult<Boolean> getFlag(String key) {
+    GetResult<Integer> flags = getFlagCount(key);
+    if (flags.isFailure())
+      return GetResult.failure(flags.getMessage());
+    return GetResult.success(flags.get() > 0);
+  }
+
+  public GetResult<Integer> getFlagCount(String key) {
     List<Token> o = parsed.get(key);
     if (o == null)
-      return null;
+      return GetResult.success(0);
     int n = 0;
-    for (Token arg: o) {
-      for (TokenValue val: arg.getValues()) {
-        if (!val.isFlag())
-          throw new IllegalArgumentException("cannot read as flag: " + arg);
-        n++;
+    for (Token arg : o) {
+      for (TokenValue val : arg.getValues()) {
+        if (val.isFlag())
+          n++;
+        else
+          return GetResult.failure("got value but was expecting flag");
       }
     }
-    return n;
+    return GetResult.success(n);
   }
 
-  public Long getNumber(String arg, Long defaultValue) {
-    String n = getString(arg);
-    if (n == null)
-      return defaultValue;
-    return Long.parseLong(n);
+  public GetResult<Long> getNumber(String arg, Long defaultValue) {
+    GetResult<String> n = getString(arg);
+    if (n.isFailure())
+      return GetResult.failure(n.getMessage());
+    try {
+      return GetResult.success(Long.parseLong(n.get()));
+    } catch (RuntimeException e) {
+      return GetResult.failure(e.getMessage());
+    }
   }
 
-  public Long getNumber(String arg) {
+  public GetResult<Long> getNumber(String arg) {
     return getNumber(arg, null);
   }
 

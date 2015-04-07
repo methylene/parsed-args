@@ -8,12 +8,12 @@ import static org.junit.Assert.assertThat;
 
 public class StrongBindingTest {
 
-  private ArgParser parser = ArgParser.parser(Mapper.builder().setStrongBinding(in("-m")).build());
+  private ArgParser parser = ArgParser.builder(Mapper.builder().setStrongBinding(in("-m")).build()).build();
 
   @Test
   public void testStrong() {
-    assertThat(parser.parse("-m", "--num=1", "-c").getString("-m"), is("--num=1"));
-    assertThat(parser.parse("-m", "--num", "1").getString("-m"), is("--num"));
+    assertThat(parser.parse("-m", "--num=1", "-c").get().getString("-m").get(), is("--num=1"));
+    assertThat(parser.parse("-m", "--num", "1").get().getString("-m").get(), is("--num"));
   }
 
 }

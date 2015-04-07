@@ -34,7 +34,7 @@ public class TokenValue {
     return type == ValType.FLAG;
   }
 
-  public String getVal() {
+  public String getValue() {
     return val;
   }
 

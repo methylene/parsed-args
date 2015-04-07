@@ -50,6 +50,16 @@ public class Token {
     return values.size() == 1 && values.get(0).isFlag();
   }
 
+  public boolean isValue() {
+    return values.size() == 1 && !values.get(0).isFlag();
+  }
+
+  public String getValue() {
+    if (!isValue())
+      throw new IllegalStateException("no value");
+    return values.get(0).getValue();
+  }
+
   public List<TokenValue> getValues() {
     return values;
   }

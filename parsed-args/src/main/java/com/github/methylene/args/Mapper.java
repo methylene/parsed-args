@@ -1,25 +1,24 @@
 package com.github.methylene.args;
 
-import com.github.methylene.args.policy.EqualsPolicy;
-import com.github.methylene.args.policy.PlusPolicy;
-import com.github.methylene.args.policy.ShortNumericPolicy;
+import com.github.methylene.args.expand.EqualsExpander;
+import com.github.methylene.args.expand.PlusExpander;
+import com.github.methylene.args.expand.ShortNumericExpander;
 
 import java.util.*;
 
-import static com.github.methylene.args.Util.DASHED_TOKEN;
-import static com.github.methylene.args.Util.UNIX_NUMERIC_TOKEN;
-import static com.github.methylene.args.Util.EQUALS_TOKEN;
+import static com.github.methylene.args.Util.*;
 import static com.github.methylene.args.predicate.Predicates.*;
+import static com.github.methylene.args.predicate.StringPredicates.matches;
 import static java.util.Collections.singletonList;
 
 public class Mapper {
 
-  private final List<MapperPolicy> policies;
-  private final Tokenizer partitioner;
+  private final List<TokenExpander> expanders;
+  private final Tokenizer tokenizer;
 
-  private Mapper(List<MapperPolicy> policies, Tokenizer partitioner) {
-    this.policies = policies;
-    this.partitioner = partitioner;
+  private Mapper(List<TokenExpander> expanders, Tokenizer tokenizer) {
+    this.expanders = expanders;
+    this.tokenizer = tokenizer;
   }
 
   public static Builder builder() {
@@ -28,69 +27,71 @@ public class Mapper {
 
   public static class Builder {
 
-    private List<MapperPolicy> policies = Arrays.asList(
-        new ShortNumericPolicy(),
-        new EqualsPolicy(),
-        new PlusPolicy()
+    private List<TokenExpander> expanders = Arrays.asList(
+        new ShortNumericExpander(),
+        new EqualsExpander(),
+        new PlusExpander()
     );
 
-    private Predicate weakBinding = matches(DASHED_TOKEN);
-    private Predicate strongBinding = nothing();
-    private Predicate atomic = or(is("-"), is("+"), matches(UNIX_NUMERIC_TOKEN), matches(EQUALS_TOKEN));
+    private Predicate<String> weakBinding = matches(DASHED_TOKEN);
+    private Predicate<String> strongBinding = nothing();
+    private Predicate<String> atomic = or(is("-"), is("+"), matches(UNIX_NUMERIC_TOKEN), matches(EQUALS_TOKEN));
 
     private Builder() {}
 
-    public Builder setWeakBinding(Predicate weakBinding) {
+    public Builder setWeakBinding(Predicate<String> weakBinding) {
       this.weakBinding = weakBinding;
       return this;
     }
 
-    public Builder setStrongBinding(Predicate strongBinding) {
+    public Builder setStrongBinding(Predicate<String> strongBinding) {
       this.strongBinding = strongBinding;
       return this;
     }
 
-    public Builder setAtomic(Predicate atomic) {
+    public Builder setAtomic(Predicate<String> atomic) {
       this.atomic = atomic;
       return this;
     }
 
-    public Builder setPolicies(List<MapperPolicy> policies) {
-      this.policies = policies;
+    public Builder setExpanders(List<TokenExpander> expanders) {
+      this.expanders = expanders;
       return this;
     }
 
     public Mapper build() {
-      return new Mapper(policies, Tokenizer.create(weakBinding, strongBinding, atomic));
+      return new Mapper(expanders, Tokenizer.create(weakBinding, strongBinding, atomic));
     }
 
-  }
-
-  public Map<String, List<Token>> build(final String[] args) {
-    return build(Util.toQueue(args));
   }
 
   private List<Token> expand(Token arg) {
-    for (MapperPolicy policy : policies) {
-      if (policy.expands(arg))
-        return policy.expand(arg);
-    }
+    for (TokenExpander expander : expanders)
+      if (expander.expands(arg))
+        return expander.expand(arg);
     return singletonList(arg);
   }
 
-  private Map<String, List<Token>> build(final Queue<Argument> queue) {
-    final Map<String, List<Token>> map = new LinkedHashMap<String, List<Token>>(queue.size());
-    Token parsed;
-    while ((parsed = partitioner.read(queue)) != null) {
-      for (Token expanded : expand(parsed)) {
-        List<Token> args = map.get(expanded.getKey());
-        if (args == null)
-          args = new ArrayList<Token>();
-        args.add(expanded);
-        map.put(expanded.getKey(), args);
+  public Map<String, List<Token>> build(final String[] args) {
+    final Map<String, List<Token>> map = new LinkedHashMap<String, List<Token>>(args.length);
+    for (Token token: tokenizer.tokenize(args)) {
+      for (Token expanded : expand(token)) {
+        List<Token> tokens = map.get(expanded.getKey());
+        if (tokens == null)
+          tokens = new ArrayList<Token>();
+        tokens.add(expanded);
+        map.put(expanded.getKey(), tokens);
       }
     }
     return map;
+  }
+
+  public Tokenizer getTokenizer() {
+    return tokenizer;
+  }
+
+  public List<TokenExpander> getExpanders() {
+    return expanders;
   }
 
 }

@@ -1,6 +1,6 @@
-package com.github.methylene.args.policy;
+package com.github.methylene.args.expand;
 
-import com.github.methylene.args.MapperPolicy;
+import com.github.methylene.args.TokenExpander;
 import com.github.methylene.args.Token;
 import com.github.methylene.args.TokenValue;
 
@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
 import static java.util.Collections.singletonList;
 import static java.util.regex.Pattern.compile;
 
-public class BsdPolicy implements MapperPolicy {
+public class BsdExpander implements TokenExpander {
 
   static final Pattern BSD_PATTERN = compile("[a-zA-Z]+");
 

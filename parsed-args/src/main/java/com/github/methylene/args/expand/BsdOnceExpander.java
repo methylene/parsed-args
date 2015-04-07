@@ -1,13 +1,13 @@
-package com.github.methylene.args.policy;
+package com.github.methylene.args.expand;
 
-import com.github.methylene.args.MapperPolicy;
+import com.github.methylene.args.TokenExpander;
 import com.github.methylene.args.Token;
 
 import static java.util.Collections.singletonList;
 
 import java.util.List;
 
-public class BsdOncePolicy implements MapperPolicy {
+public class BsdOnceExpander implements TokenExpander {
 
   boolean canBsd = true;
 
@@ -15,7 +15,7 @@ public class BsdOncePolicy implements MapperPolicy {
   public List<Token> expand(Token arg) {
     if (canBsd && arg.isFlag()) {
       canBsd = false;
-      return BsdPolicy.doExpand(arg);
+      return BsdExpander.doExpand(arg);
     }
     return singletonList(arg);
   }

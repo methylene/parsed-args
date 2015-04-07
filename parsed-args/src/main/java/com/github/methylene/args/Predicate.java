@@ -1,7 +1,7 @@
 package com.github.methylene.args;
 
-public interface Predicate {
+public interface Predicate<T> {
 
-  boolean matches(String arg);
+  boolean matches(T arg);
 
 }
