@@ -12,8 +12,8 @@ public class StrongBindingTest {
 
   @Test
   public void testStrong() {
-    assertThat(parser.parse("-m", "--num=1", "-c").get().getString("-m").get(), is("--num=1"));
-    assertThat(parser.parse("-m", "--num", "1").get().getString("-m").get(), is("--num"));
+    assertThat(parser.parse("-m", "--num=1", "-c").get().get("-m").getString(), is("--num=1"));
+    assertThat(parser.parse("-m", "--num", "1").get().get("-m").getString(), is("--num"));
   }
 
 }

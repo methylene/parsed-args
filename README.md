@@ -6,10 +6,10 @@ There is a script `parse.sh` which reads any number of arguments and prints thei
 
     $ ./parse.sh xJf -a 1 -n+2-3 +%% +%f --day=1 --day 2 - -- -x -y
 
-    xJf occurs 1 times
+    flag xJf occurs 1 times
     -a -> 1
     -n -> +2-3
     + -> [%%, %f]
     --day -> [1, 2]
-    - occurs 1 times
-    -- -> [-x, -y
+    flag - occurs 1 times
+    -- -> [-x, -y]

@@ -1,6 +1,7 @@
 package com.github.methylene.args.test;
 
 import com.github.methylene.args.ArgParser;
+import com.github.methylene.args.GetResult;
 import com.github.methylene.args.ParseResult;
 import com.github.methylene.args.ParsedArgs;
 
@@ -24,28 +25,16 @@ public class PrintArgs {
 
     ParsedArgs parsedArgs = parseResult.get();
     for (String key : parsedArgs.getKeys()) {
-      ParsedArgs.ArgType type = parsedArgs.getType(key);
-      switch (type) {
-        case VALUE: {
-          List<String> values = parsedArgs.getValues(key).get();
-          System.out.format("%s -> %s%n", key, values.size() == 1 ? values.get(0) : values);
-          break;
-        }
-        case FLAG: {
-          Integer flagCount = parsedArgs.getFlagCount(key).get();
-          System.out.format("%s occurs %d times%n", key, flagCount);
-          break;
-        }
-        case MIXED: {
-          System.out.format("%s: not sure if flag or value%n", key);
-          break;
-        }
-        case NOTHING: {
-          System.out.format("%s: nothing%n", key);
-          break;
-        }
+      GetResult value = parsedArgs.get(key);
+      if (value.isMixed()) {
+        System.out.format("%s: not sure if flag or value%n", key);
+      } else if (value.isFlag()) {
+        System.out.format("flag %s occurs %d times%n", key, value.getFlagCount());
+      } else if (value.isSingleValue()) {
+        System.out.format("%s -> %s%n", key, value.getString());
+      } else {
+        System.out.format("%s -> %s%n", key, value.getValues());
       }
-
     }
 
   }
