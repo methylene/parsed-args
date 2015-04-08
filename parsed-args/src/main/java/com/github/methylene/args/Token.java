@@ -1,67 +1,43 @@
 package com.github.methylene.args;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import static java.util.Collections.singletonList;
-import static java.util.Arrays.asList;
-import static java.util.Collections.unmodifiableList;
-
 public class Token {
 
-  private final String key;
-  private final List<TokenValue> values;
-  private final List<Argument> source;
+  private final SimpleToken token;
+  private final Argument source;
 
-  public Token(String key, List<TokenValue> values, List<Argument> source) {
-    this.key = key;
-    this.values = unmodifiableList(values);
-    this.source = unmodifiableList(source);
+  private Token(SimpleToken token, Argument source) {
+    this.token = token;
+    this.source = source;
   }
 
-  public static Token create(String key, List<Argument> source) {
-    List<TokenValue> vals = new ArrayList<TokenValue>(source.size());
-    for (Argument arg : source)
-      vals.add(TokenValue.create(arg.getArg()));
-    return new Token(key, vals, source);
+  public static Token create(SimpleToken token, Argument source) {
+    return new Token(token, source);
   }
 
-  public static Token create(String key, String value, Argument source) {
-    return new Token(key, singletonList(TokenValue.create(value)), singletonList(source));
+  public SimpleToken getToken() {
+    return token;
   }
 
-  public static Token create(Argument key, Argument value) {
-    return new Token(key.getArg(), singletonList(TokenValue.create(value.getArg())), asList(key, value));
-  }
-
-  public static Token create(Argument source) {
-    return new Token(source.getArg(), singletonList(TokenValue.create()), singletonList(source));
-  }
-
-  public String getKey() {
-    return key;
-  }
-
-  public List<Argument> getSource() {
+  public Argument getSource() {
     return source;
   }
 
-  public boolean isFlag() {
-    return values.size() == 1 && values.get(0).isFlag();
-  }
-
-  public boolean isValue() {
-    return values.size() == 1 && !values.get(0).isFlag();
+  public String getKey() {
+    return token.getKey();
   }
 
   public String getValue() {
-    if (!isValue())
-      throw new IllegalStateException("no value");
-    return values.get(0).getValue();
+    if (!token.getValue().isValue())
+      throw new IllegalStateException("can't get value of a flag");
+    return token.getValue().getValue();
   }
 
-  public List<TokenValue> getValues() {
-    return values;
+  public boolean isFlag() {
+    return token.getValue().isFlag();
+  }
+
+  public boolean isValue() {
+    return token.getValue().isValue();
   }
 
 }

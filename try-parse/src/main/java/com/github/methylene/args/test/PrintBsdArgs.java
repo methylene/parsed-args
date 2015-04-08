@@ -2,7 +2,7 @@ package com.github.methylene.args.test;
 
 import com.github.methylene.args.ArgParser;
 
-public class PrintArgs {
+public class PrintBsdArgs {
 
   public static void main(String[] args) {
 

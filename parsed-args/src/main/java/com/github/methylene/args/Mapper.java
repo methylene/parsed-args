@@ -1,8 +1,10 @@
 package com.github.methylene.args;
 
+import com.github.methylene.args.expand.BsdFirstExpander;
 import com.github.methylene.args.expand.EqualsExpander;
 import com.github.methylene.args.expand.PlusExpander;
 import com.github.methylene.args.expand.ShortNumericExpander;
+import com.github.methylene.args.predicate.Predicates;
 
 import java.util.*;
 
@@ -16,26 +18,51 @@ public class Mapper {
   private final List<TokenExpander> expanders;
   private final Tokenizer tokenizer;
 
+  public enum BuilderPresets {
+    DEFAULT, BSD_FIRST, BASIC
+  }
+
   private Mapper(List<TokenExpander> expanders, Tokenizer tokenizer) {
     this.expanders = expanders;
     this.tokenizer = tokenizer;
   }
 
   public static Builder builder() {
-    return new Builder();
+    return builder(BuilderPresets.DEFAULT);
+  }
+
+  public static Builder builder(BuilderPresets presets) {
+    switch (presets) {
+      case DEFAULT:
+        return new Builder()
+            .setRestDelimiter("--")
+            .addExpander(new ShortNumericExpander())
+            .addExpander(new EqualsExpander())
+            .addExpander(new PlusExpander())
+            .setWeakBinding(matches(DASHED_TOKEN))
+            .setStrongBinding(Predicates.<String>nothing())
+            .setAtomic(or(is("-"), is("+"), matches(UNIX_NUMERIC_TOKEN), matches(EQUALS_TOKEN)));
+      case BASIC:
+        return new Builder()
+            .setWeakBinding(Predicates.<String>nothing())
+            .setStrongBinding(Predicates.<String>nothing())
+            .setAtomic(Predicates.<String>nothing());
+      case BSD_FIRST:
+        return builder(BuilderPresets.DEFAULT).addExpander(new BsdFirstExpander());
+      default:
+        throw new IllegalArgumentException();
+    }
   }
 
   public static class Builder {
 
-    private List<TokenExpander> expanders = Arrays.asList(
-        new ShortNumericExpander(),
-        new EqualsExpander(),
-        new PlusExpander()
-    );
+    private List<TokenExpander> expanders = new ArrayList<TokenExpander>();
 
-    private Predicate<String> weakBinding = matches(DASHED_TOKEN);
-    private Predicate<String> strongBinding = nothing();
-    private Predicate<String> atomic = or(is("-"), is("+"), matches(UNIX_NUMERIC_TOKEN), matches(EQUALS_TOKEN));
+    private Predicate<String> weakBinding;
+    private Predicate<String> strongBinding;
+    private Predicate<String> atomic;
+
+    private String restDelimiter;
 
     private Builder() {}
 
@@ -54,13 +81,23 @@ public class Mapper {
       return this;
     }
 
+    public Builder addExpander(TokenExpander expander) {
+      this.expanders.add(expander);
+      return this;
+    }
+
     public Builder setExpanders(List<TokenExpander> expanders) {
       this.expanders = expanders;
       return this;
     }
 
+    public Builder setRestDelimiter(String restDelimiter) {
+      this.restDelimiter = restDelimiter;
+      return this;
+    }
+
     public Mapper build() {
-      return new Mapper(expanders, Tokenizer.create(weakBinding, strongBinding, atomic));
+      return new Mapper(expanders, Tokenizer.create(weakBinding, strongBinding, atomic, restDelimiter));
     }
 
   }

@@ -34,6 +34,10 @@ public class TokenValue {
     return type == ValType.FLAG;
   }
 
+  public boolean isValue() {
+    return type == ValType.VALUE;
+  }
+
   public String getValue() {
     return val;
   }

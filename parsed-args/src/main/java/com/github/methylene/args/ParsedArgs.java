@@ -8,7 +8,7 @@ public final class ParsedArgs {
 
   ParsedArgs(Map<String, List<Token>> parsed) {
     LinkedHashMap<String, List<Token>> copy = new LinkedHashMap<String, List<Token>>(parsed.size());
-    for (Map.Entry<String, List<Token>> e: parsed.entrySet()) {
+    for (Map.Entry<String, List<Token>> e : parsed.entrySet()) {
       copy.put(e.getKey(), Collections.unmodifiableList(e.getValue()));
     }
     this.parsed = Collections.unmodifiableMap(copy);
@@ -20,9 +20,7 @@ public final class ParsedArgs {
       return new GetResult(Collections.<TokenValue>emptyList());
     ArrayList<TokenValue> result = new ArrayList<TokenValue>();
     for (Token arg : o) {
-      for (TokenValue val : arg.getValues()) {
-        result.add(val);
-      }
+      result.add(arg.getToken().getValue());
     }
     return new GetResult(result);
   }

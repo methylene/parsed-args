@@ -1,8 +1,6 @@
 package com.github.methylene.args.expand;
 
-import com.github.methylene.args.TokenExpander;
-import com.github.methylene.args.Token;
-import com.github.methylene.args.TokenValue;
+import com.github.methylene.args.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +17,7 @@ public class BsdExpander implements TokenExpander {
     if (arg.isFlag() && BSD_PATTERN.matcher(arg.getKey()).matches()) {
       List<Token> bsdFlags = new ArrayList<Token>(arg.getKey().length());
       for (int i = 0; i < arg.getKey().length(); i++) {
-        bsdFlags.add(new Token(Character.toString(arg.getKey().charAt(i)), singletonList(TokenValue.create()), arg.getSource()));
+        bsdFlags.add(Token.create(SimpleToken.create(Character.toString(arg.getKey().charAt(i))), arg.getSource()));
       }
       return bsdFlags;
     }

@@ -1,6 +1,5 @@
 package com.github.methylene.args;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Queue;
 
@@ -10,44 +9,37 @@ public final class Tokenizer {
   private final Predicate<String> weakBinding;
   private final Predicate<String> strongBinding;
   private final Predicate<String> atomic;
+  private final String restDelimiter;
 
-  private Tokenizer(Predicate<String> weakBinding, Predicate<String> strongBinding, Predicate<String> atomic) {
+  private Tokenizer(Predicate<String> weakBinding, Predicate<String> strongBinding, Predicate<String> atomic, String restDelimiter) {
     this.weakBinding = weakBinding;
     this.strongBinding = strongBinding;
     this.atomic = atomic;
+    this.restDelimiter = restDelimiter;
   }
 
-  public static Tokenizer create(Predicate<String> weakBinding, Predicate<String> strongBinding, Predicate<String> atomic) {
-    return new Tokenizer(weakBinding, strongBinding, atomic);
+  public static Tokenizer create(Predicate<String> weakBinding, Predicate<String> strongBinding, Predicate<String> atomic, String restDelimiter) {
+    return new Tokenizer(weakBinding, strongBinding, atomic, restDelimiter);
   }
 
-  private Token read(Queue<Argument> queue) {
-    if (queue.isEmpty())
-      return null;
-    Argument token = queue.poll();
-    String arg = token.getArg();
+  private SimpleToken read(String first, Queue<Argument> rest) {
 
-    if (atomic.matches(arg))
-      return Token.create(token);
+    if (rest.isEmpty())
+      return SimpleToken.create(first);
 
-    if ("--".equals(arg)) {
-      ArrayList<Argument> list = new ArrayList<Argument>(queue.size());
-      while (!queue.isEmpty())
-        list.add(queue.poll());
-      return Token.create("--", list);
-    }
+    if (atomic.matches(first))
+      return SimpleToken.create(first);
 
-    if (strongBinding.matches(arg) && !queue.isEmpty())
-      return Token.create(token, queue.poll());
+    if (strongBinding.matches(first))
+      return SimpleToken.create(first, rest.poll().getArg());
 
-    if (weakBinding.matches(arg)
-        && !queue.isEmpty()
-        && !weakBinding.matches(queue.peek().getArg())
-        && !strongBinding.matches(queue.peek().getArg())
-        && !atomic.matches(queue.peek().getArg()))
-      return Token.create(token, queue.poll());
+    if (weakBinding.matches(first)
+        && !weakBinding.matches(rest.peek().getArg())
+        && !strongBinding.matches(rest.peek().getArg())
+        && !atomic.matches(rest.peek().getArg()))
+      return SimpleToken.create(first, rest.poll().getArg());
 
-    return Token.create(token);
+    return SimpleToken.create(first);
 
   }
 
@@ -60,22 +52,40 @@ public final class Tokenizer {
       @Override
       public Iterator<Token> iterator() {
         return new Iterator<Token>() {
-          boolean started = false;
-          private Token next = null;
+
+          private boolean started = false;
+          private boolean restMode = false;
+          private Token nextToken = null;
+
+          private Token next_(Argument nextArg) {
+            SimpleToken next;
+            if (nextArg == null) {
+              next = null;
+            } else if (restMode) {
+              next = SimpleToken.create("--", nextArg.getArg());
+            } else if (restDelimiter != null && restDelimiter.equals(nextArg.getArg())) {
+              nextArg = queue.isEmpty() ? null : queue.poll();
+              next = nextArg == null ? null : SimpleToken.create(restDelimiter, nextArg.getArg());
+              restMode = true;
+            } else {
+              next = read(nextArg.getArg(), queue);
+            }
+            return nextArg == null ? null : Token.create(next, nextArg);
+          }
 
           @Override
           public boolean hasNext() {
             if (!started) {
               started = true;
-              next = read(queue);
+              nextToken = next_(queue.isEmpty() ? null : queue.poll());
             }
-            return next != null;
+            return nextToken != null;
           }
 
           @Override
           public Token next() {
-            Token tmp = next;
-            this.next = read(queue);
+            Token tmp = nextToken;
+            nextToken = next_(queue.isEmpty() ? null : queue.poll());
             return tmp;
           }
         };
