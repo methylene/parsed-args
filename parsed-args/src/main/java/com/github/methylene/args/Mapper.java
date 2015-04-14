@@ -18,8 +18,8 @@ public class Mapper {
   private final List<TokenExpander> expanders;
   private final Tokenizer tokenizer;
 
-  public enum BuilderPresets {
-    DEFAULT, BSD_FIRST, BASIC
+  public enum Flavour {
+    DEFAULT, BSD, BASIC
   }
 
   private Mapper(List<TokenExpander> expanders, Tokenizer tokenizer) {
@@ -28,11 +28,16 @@ public class Mapper {
   }
 
   public static Builder builder() {
-    return builder(BuilderPresets.DEFAULT);
+    return builder(Flavour.DEFAULT);
   }
 
-  public static Builder builder(BuilderPresets presets) {
-    switch (presets) {
+  /**
+   * Convenience method to get a pre-populated builder
+   * @param flavour a builder flavour
+   * @return a builder
+   */
+  public static Builder builder(Flavour flavour) {
+    switch (flavour) {
       case DEFAULT:
         return new Builder()
             .setRestDelimiter("--")
@@ -47,10 +52,10 @@ public class Mapper {
             .setWeakBinding(Predicates.<String>nothing())
             .setStrongBinding(Predicates.<String>nothing())
             .setAtomic(Predicates.<String>nothing());
-      case BSD_FIRST:
-        return builder(BuilderPresets.DEFAULT).addExpander(new BsdFirstExpander());
+      case BSD:
+        return builder(Flavour.DEFAULT).addExpander(new BsdFirstExpander());
       default:
-        throw new IllegalArgumentException();
+        throw new IllegalArgumentException("unknown flavour: " + flavour);
     }
   }
 

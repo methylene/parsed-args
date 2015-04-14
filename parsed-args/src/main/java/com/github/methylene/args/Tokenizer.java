@@ -88,6 +88,11 @@ public final class Tokenizer {
             nextToken = next_(queue.isEmpty() ? null : queue.poll());
             return tmp;
           }
+
+          @Override public void remove() {
+            throw new UnsupportedOperationException();
+          }
+
         };
       }
     };
