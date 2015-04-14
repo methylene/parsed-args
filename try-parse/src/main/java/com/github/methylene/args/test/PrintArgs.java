@@ -3,6 +3,7 @@ package com.github.methylene.args.test;
 import com.github.methylene.args.ArgParser;
 import com.github.methylene.args.Mapper;
 
+import java.util.Arrays;
 import java.util.Locale;
 
 public class PrintArgs {
@@ -13,17 +14,24 @@ public class PrintArgs {
     return newArgs;
   }
 
+  private static void synopsis() {
+    System.out.println("Arguments: [flavour [more_args]*] ");
+    System.out.println("Available flavours: " + Arrays.asList(Mapper.Flavour.values()));
+    System.exit(1);
+  }
+
   public static void main(String[] args) {
 
     if (args.length == 0)
-      return;
+      synopsis();
 
     Mapper.Flavour flavour;
 
     try {
       flavour = Mapper.Flavour.valueOf(args[0].toUpperCase(Locale.US));
     } catch (RuntimeException e) {
-      System.out.println(e.getMessage());
+      e.printStackTrace();
+      synopsis();
       return;
     }
 
