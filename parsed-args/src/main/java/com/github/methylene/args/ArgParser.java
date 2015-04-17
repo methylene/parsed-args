@@ -7,12 +7,19 @@ import java.util.*;
 
 public class ArgParser {
 
+  public enum StrictnessRule {
+    REJECT_UNDECLARED_FLAGS, REJECT_UNDECLARED_PROPERTIES, REJECT_MIXED
+  }
+
+  private final Set<StrictnessRule> strictnessRules;
+
   private static class Expectation {
 
     private final TokenValue.ValType type;
     private final String field;
     private final Predicate<List<Token>> predicate;
     private final String message;
+
 
     private Expectation(TokenValue.ValType type, String field, String message, Predicate<List<Token>> predicate) {
       this.type = type;
@@ -55,6 +62,7 @@ public class ArgParser {
       private String message = null;
       private final List<Predicate<List<Token>>> predicates;
       private final ParserBuilder parserBuilder;
+      private boolean rejectUnknown;
 
       private ExpectationBuilder(ParserBuilder parserBuilder, String field) {
         this.field = field;
@@ -86,6 +94,7 @@ public class ArgParser {
 
     private final Mapper mapper;
     private List<Expectation> expectations = new ArrayList<Expectation>();
+    private Set<StrictnessRule> strictnessRules = new HashSet<StrictnessRule>(StrictnessRule.values().length);
 
     private ParserBuilder(Mapper mapper) {
       this.mapper = mapper;
@@ -110,8 +119,14 @@ public class ArgParser {
       return this;
     }
 
+    public ParserBuilder addStrictnessRule(StrictnessRule rule) {
+      strictnessRules.add(rule);
+      return this;
+    }
+
     public ArgParser build() {
-      return new ArgParser(modifiedMapper(expectations, mapper), expectations);
+      return new ArgParser(modifiedMapper(expectations, mapper), expectations,
+          strictnessRules.isEmpty() ? Collections.<StrictnessRule>emptySet() : EnumSet.copyOf(strictnessRules));
     }
 
   }
@@ -127,8 +142,9 @@ public class ArgParser {
   private final Mapper mapper;
   private final List<Expectation> expectations;
 
-  private ArgParser(Mapper mapper, List<Expectation> expectations) {
+  private ArgParser(Mapper mapper, List<Expectation> expectations, Set<StrictnessRule> strictnessRules) {
     this.mapper = mapper;
+    this.strictnessRules = strictnessRules;
     this.expectations = expectations;
   }
 
@@ -158,12 +174,45 @@ public class ArgParser {
       if (!expectation.predicate.matches(map.get(expectation.field))) {
         String fieldName = expectation.field.replace("'", "''");
         String msg = expectation.message == null ? "" : expectation.message.replace("'", "''");
-        messages.add(String.format("'%s'\t'%s'", fieldName, msg));
+        messages.add(String.format("'%s' == '%s' is not ok", fieldName, msg));
       }
     }
+
+
+    ParsedArgs parsedArgs = new ParsedArgs(map);
+
+    if (strictnessRules.contains(StrictnessRule.REJECT_UNDECLARED_FLAGS)) {
+      for (String key : parsedArgs.getKeys()) {
+        if (parsedArgs.get(key).isFlag()) {
+          if (!mapper.getTokenizer().getAtomic().matches(key)) {
+            messages.add("unknown flag: " + key);
+          }
+        }
+      }
+    }
+
+    if (strictnessRules.contains(StrictnessRule.REJECT_UNDECLARED_PROPERTIES)) {
+      for (String key : parsedArgs.getKeys()) {
+        if (parsedArgs.get(key).isValues()) {
+          if (!mapper.getTokenizer().getStrongBinding().matches(key)) {
+            messages.add("unknown property: " + key);
+          }
+        }
+      }
+    }
+
+    if (strictnessRules.contains(StrictnessRule.REJECT_MIXED)) {
+      for (String key : parsedArgs.getKeys()) {
+        if (parsedArgs.get(key).isMixed()) {
+          messages.add("mixing flags and values: " + key);
+        }
+      }
+    }
+
     if (!messages.isEmpty())
       return ParseResult.failure(messages);
-    return ParseResult.success(new ParsedArgs(map));
+
+    return ParseResult.success(parsedArgs);
   }
 
 }
