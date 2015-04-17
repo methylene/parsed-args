@@ -8,7 +8,7 @@ import java.util.*;
 public class ArgParser {
 
   public enum StrictnessRule {
-    REJECT_UNDECLARED_FLAGS, REJECT_UNDECLARED_PROPERTIES, REJECT_MIXED
+    REJECT_UNDECLARED_FLAGS, REJECT_UNDECLARED_PROPERTIES, REJECT_EMPTY_PROPERTY, REJECT_MIXED
   }
 
   private final Set<StrictnessRule> strictnessRules;
@@ -181,6 +181,7 @@ public class ArgParser {
 
     ParsedArgs parsedArgs = new ParsedArgs(map);
 
+    // TODO unit tests for strictness rules, also TODO: how to make a property required?
     if (strictnessRules.contains(StrictnessRule.REJECT_UNDECLARED_FLAGS)) {
       for (String key : parsedArgs.getKeys()) {
         if (parsedArgs.get(key).isFlag()) {
@@ -205,6 +206,16 @@ public class ArgParser {
       for (String key : parsedArgs.getKeys()) {
         if (parsedArgs.get(key).isMixed()) {
           messages.add("mixing flags and values: " + key);
+        }
+      }
+    }
+
+    // this might happen if a strong binding key is the last argument
+    if (strictnessRules.contains(StrictnessRule.REJECT_EMPTY_PROPERTY)) {
+      for (String key : parsedArgs.getKeys()) {
+        if (!mapper.getTokenizer().getStrongBinding().matches(key) &&
+            (!parsedArgs.get(key).isValues() || parsedArgs.get(key).getValues().isEmpty())) {
+          messages.add("property needs a value: " + key);
         }
       }
     }
