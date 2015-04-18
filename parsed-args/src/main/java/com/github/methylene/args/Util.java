@@ -23,10 +23,10 @@ public final class Util {
 //      queue.push(args[i]);
 //    return queue;
 //  }
-  static Queue<Argument> toQueue(String[] args) {
-    LinkedList<Argument> queue = new LinkedList<Argument>();
+  static Queue<RawArgument> toQueue(String[] args) {
+    LinkedList<RawArgument> queue = new LinkedList<RawArgument>();
     for (int i = args.length - 1; i >= 0; i--)
-      queue.push(new Argument(args[i], i));
+      queue.push(new RawArgument(args[i], i));
     return queue;
   }
 

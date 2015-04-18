@@ -3,14 +3,14 @@ package com.github.methylene.args;
 public class Token {
 
   private final SimpleToken token;
-  private final Argument source;
+  private final RawArgument source;
 
-  private Token(SimpleToken token, Argument source) {
+  private Token(SimpleToken token, RawArgument source) {
     this.token = token;
     this.source = source;
   }
 
-  public static Token create(SimpleToken token, Argument source) {
+  public static Token create(SimpleToken token, RawArgument source) {
     return new Token(token, source);
   }
 
@@ -18,7 +18,7 @@ public class Token {
     return token;
   }
 
-  public Argument getSource() {
+  public RawArgument getSource() {
     return source;
   }
 

@@ -30,6 +30,17 @@ public class ExpectationTest {
   }
 
   @Test
+  public void requiredShortNumeric() {
+    ArgParser parser = ArgParser.builder()
+        .required("-n")
+        .flag("-v")
+        .build();
+    // using short numeric form for required parameter -n
+    ParseResult result = parser.parse("-n1");
+    assertTrue(result.isSuccess());
+  }
+
+  @Test
   public void mixing() {
     ArgParser parser = ArgParser.builder().build();
     // missing value for second -a

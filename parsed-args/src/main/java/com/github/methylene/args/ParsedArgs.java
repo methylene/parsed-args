@@ -14,15 +14,15 @@ public final class ParsedArgs {
     this.parsed = Collections.unmodifiableMap(copy);
   }
 
-  public GetResult get(String key) {
+  public Argument get(String key) {
     List<Token> o = parsed.get(key);
     if (o == null)
-      return new GetResult(Collections.<TokenValue>emptyList());
+      return new Argument(Collections.<TokenValue>emptyList());
     ArrayList<TokenValue> result = new ArrayList<TokenValue>();
     for (Token arg : o) {
       result.add(arg.getToken().getValue());
     }
-    return new GetResult(result);
+    return new Argument(result);
   }
 
   public Set<String> getKeys() {

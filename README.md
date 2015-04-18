@@ -42,11 +42,44 @@ BSD parsing rules, as recognized by the unix `ps` commmand, can also be used:
 
 If necessary, different parsing rules can be configured in a programmatic and very flexible way.
 Have a look at the source of `Mapper#builder` to get an idea.
-Of course, full parameter declaration and rejection of undeclared parameters or flags, is also possible:
+
+### Explicit parameter declaration
+
+While the default parsing behaviour is very convenient for prototyping,
+explicit declaration of parameters and flags, and marking certain parameters as required,
+will naturally become desirable in a more mature project:
 
 ````java
-ArgParser parser = ArgParser.builder().required("-a").rejectUndeclared().build();
+ArgParser parser = ArgParser.builder()
+    .required("-n")
+    .flag("-v")
+    .build();
+// using short numeric form for required parameter -n
+ParseResult result = parser.parse("-n1");
+assertTrue(result.isSuccess());                                        
+````
+
+### Strict behaviour
+
+Full parameter declaration, including rejection of undeclared parameters or flags, can be configured
+via the `rejectUndeclared` builder option:
+
+````java
+ArgParser parser = ArgParser.builder()
+    .required("-a")
+    .rejectUndeclared()
+    .build();
 ParseResult result = parser.parse("-a", "1", "-b");
-// -b is not declared, and rejectUndeclared is set, therefore parsing fails
+// -b is not declared, therefore parsing fails
 assertTrue(result.isFailure());                
 ````
+
+### Limitations
+
+It is not possible to define <i>long opt / short opt</i> pairs
+that should be treated as equivalent ways to specify the same parameter.
+This must be done manually, or implemented on top of this parser.
+
+It is also not possible to register <i>converters</i>. All parsed arguments are treated as strings
+or lists of strings.
+The only exception from this rule is currently the convenience method `Argument#parseLong`.
