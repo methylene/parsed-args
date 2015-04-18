@@ -43,7 +43,7 @@ BSD parsing rules, as recognized by the unix `ps` commmand, can also be used:
 If necessary, different parsing rules can be configured in a programmatic and very flexible way.
 Have a look at the source of `Mapper#builder` to get an idea.
 
-### Explicit parameter declaration
+### Explicit declaration
 
 While the default parsing behaviour is very convenient for prototyping,
 explicit declaration of parameters and flags, and marking certain parameters as required,
