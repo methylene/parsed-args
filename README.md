@@ -81,5 +81,7 @@ that should be treated as equivalent ways to specify the same parameter.
 This must be done manually, or implemented on top of this parser.
 
 It is also not possible to register <i>converters</i> and <i>validators</i> for parameter <i>values</i>.
-Parameter values are always treated as strings or lists of strings, and conversion of.
-The only exception from this rule is currently the convenience method `Argument#parseLong`.
+Parameter values are always read as strings or lists of strings,
+and no conversion or validation is performed apart from checking the <i>cardinality</i>
+of the parameter. For example, marking a parameter as required means that its
+cardinality should be exactly `1`.
