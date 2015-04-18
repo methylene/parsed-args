@@ -30,4 +30,5 @@ BSD parsing rules, as used by the unix `ps` commmand, can also be used:
     flag "w" occurs 2 times
 
 If necessary, different parsing rules can be configured in a programmatic way.
+Have a look at the source of `Mapper#builder` to get an idea.
 Of course, full parameter declaration including rejection of undeclared parameters is also possible.
