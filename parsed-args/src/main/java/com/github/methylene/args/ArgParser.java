@@ -1,5 +1,6 @@
 package com.github.methylene.args;
 
+import com.github.methylene.args.predicate.IntegerPredicates;
 import com.github.methylene.args.predicate.ListPredicates;
 import com.github.methylene.args.predicate.Predicates;
 
@@ -7,19 +8,32 @@ import java.util.*;
 
 public class ArgParser {
 
-  public enum StrictnessRule {
-    REJECT_UNDECLARED_FLAGS, REJECT_UNDECLARED_PROPERTIES, REJECT_EMPTY_PROPERTY, REJECT_MIXED
+  public enum RejectionCondition {
+    UNDECLARED_FLAG, UNDECLARED_PROPERTY
   }
 
-  private final Set<StrictnessRule> strictnessRules;
+  public enum ArityRule {
+    ZERO_OR_MORE(ListPredicates.hasCardinality(IntegerPredicates.geq(0))),
+    ZERO_OR_ONE(Predicates.or(
+        ListPredicates.hasCardinality(IntegerPredicates.exactly(0)),
+        ListPredicates.hasCardinality(IntegerPredicates.exactly(1)))),
+    ONE_OR_MORE(ListPredicates.hasCardinality(IntegerPredicates.geq(1))),
+    EXACTLY_ONE(ListPredicates.hasCardinality(IntegerPredicates.exactly(1)));
+    private final Predicate<List<Token>> predicate;
+    ArityRule(Predicate<List<Token>> predicate) {this.predicate = predicate;}
+    public Predicate<List<Token>> getPredicate() {
+      return predicate;
+    }
+  }
 
-  private static class Expectation {
+  private final Set<RejectionCondition> rejectionConditions;
+
+  private static final class Expectation {
 
     private final TokenValue.ValType type;
     private final String field;
     private final Predicate<List<Token>> predicate;
     private final String message;
-
 
     private Expectation(TokenValue.ValType type, String field, String message, Predicate<List<Token>> predicate) {
       this.type = type;
@@ -28,64 +42,22 @@ public class ArgParser {
       this.message = message;
     }
 
-    static Expectation expect(String field, String message, Predicate<List<Token>> predicate) {
-      return new Expectation(TokenValue.ValType.VALUE, field, message, predicate);
+    private static Expectation property(String field, ArityRule mult) {
+      return new Expectation(TokenValue.ValType.PROPERTY, field, "expected property with arity " + mult,
+          Predicates.and(TokenValue.ValType.PROPERTY.getPredicate(), mult.getPredicate()));
     }
 
-    static Expectation expectSingleFlag(String field) {
-      return new Expectation(TokenValue.ValType.FLAG, field, "single flag expected", ListPredicates.isSingleFlag());
+    private static Expectation flag(String field, ArityRule mult) {
+      return new Expectation(TokenValue.ValType.FLAG, field, "expected flag with arity " + mult,
+          Predicates.and(TokenValue.ValType.FLAG.getPredicate(), mult.getPredicate()));
     }
 
-    static Expectation expectFlag(String field, String message, Predicate<List<Token>> predicate) {
-      return new Expectation(TokenValue.ValType.FLAG, field, "single flag expected", predicate);
-    }
-
-    static Expectation expectMultiFlag(String field) {
-      return new Expectation(TokenValue.ValType.FLAG, field, null, Predicates.<List<Token>>anything());
-    }
-
-    TokenValue.ValType getType() {
-      return type;
-    }
-
-    boolean isFlag() {
+    private boolean isFlag() {
       return type == TokenValue.ValType.FLAG;
     }
 
-    String getField() {
+    private String getField() {
       return field;
-    }
-
-    public static class ExpectationBuilder {
-
-      private final String field;
-      private String message = null;
-      private final List<Predicate<List<Token>>> predicates;
-      private final ParserBuilder parserBuilder;
-      private boolean rejectUnknown;
-
-      private ExpectationBuilder(ParserBuilder parserBuilder, String field) {
-        this.field = field;
-        this.predicates = new ArrayList<Predicate<List<Token>>>();
-        this.parserBuilder = parserBuilder;
-      }
-
-      public ExpectationBuilder setMessage(String message) {
-        this.message = message;
-        return this;
-      }
-
-      public ExpectationBuilder and(Predicate<List<Token>> predicate) {
-        predicates.add(predicate);
-        return this;
-      }
-
-      public ParserBuilder done() {
-        Predicate<List<Token>> predicate = predicates.isEmpty() ? Predicates.<List<Token>>anything() : Predicates.and(predicates);
-        parserBuilder.expectations.add(expect(field, message, predicate));
-        return parserBuilder;
-      }
-
     }
 
   }
@@ -94,39 +66,46 @@ public class ArgParser {
 
     private final Mapper mapper;
     private List<Expectation> expectations = new ArrayList<Expectation>();
-    private Set<StrictnessRule> strictnessRules = new HashSet<StrictnessRule>(StrictnessRule.values().length);
+    private Set<RejectionCondition> rejectionConditions = new HashSet<RejectionCondition>(RejectionCondition.values().length);
 
     private ParserBuilder(Mapper mapper) {
       this.mapper = mapper;
     }
 
-    public Expectation.ExpectationBuilder expectValue(String field) {
-      return new Expectation.ExpectationBuilder(this, field);
-    }
-
-    public ParserBuilder expectFlag(String field) {
-      expectations.add(Expectation.expectSingleFlag(field));
+    private ParserBuilder property(String field, ArityRule mult) {
+      expectations.add(Expectation.property(field, mult));
       return this;
     }
 
-    public ParserBuilder expectFlag(String field, String message, Predicate<List<Token>> predicate) {
-      expectations.add(Expectation.expectFlag(field, message, predicate));
+    public ParserBuilder required(String field) {
+      return property(field, ArityRule.EXACTLY_ONE);
+    }
+
+    public ParserBuilder optional(String field) {
+      return property(field, ArityRule.ZERO_OR_ONE);
+    }
+
+    public ParserBuilder list(String field) {
+      return property(field, ArityRule.ZERO_OR_MORE);
+    }
+
+    public ParserBuilder flag(String field, ArityRule mult) {
+      expectations.add(Expectation.flag(field, mult));
       return this;
     }
 
-    public ParserBuilder expectMultiFlag(String field) {
-      expectations.add(Expectation.expectMultiFlag(field));
-      return this;
+    public ParserBuilder flag(String field) {
+      return flag(field, ArityRule.ZERO_OR_ONE);
     }
 
-    public ParserBuilder addStrictnessRule(StrictnessRule rule) {
-      strictnessRules.add(rule);
+    public ParserBuilder rejectUndeclared() {
+      rejectionConditions.addAll(Arrays.asList(RejectionCondition.values()));
       return this;
     }
 
     public ArgParser build() {
       return new ArgParser(modifiedMapper(expectations, mapper), expectations,
-          strictnessRules.isEmpty() ? Collections.<StrictnessRule>emptySet() : EnumSet.copyOf(strictnessRules));
+          rejectionConditions.isEmpty() ? Collections.<RejectionCondition>emptySet() : EnumSet.copyOf(rejectionConditions));
     }
 
   }
@@ -142,9 +121,9 @@ public class ArgParser {
   private final Mapper mapper;
   private final List<Expectation> expectations;
 
-  private ArgParser(Mapper mapper, List<Expectation> expectations, Set<StrictnessRule> strictnessRules) {
+  private ArgParser(Mapper mapper, List<Expectation> expectations, Set<RejectionCondition> rejectionConditions) {
     this.mapper = mapper;
-    this.strictnessRules = strictnessRules;
+    this.rejectionConditions = rejectionConditions;
     this.expectations = expectations;
   }
 
@@ -168,54 +147,41 @@ public class ArgParser {
   }
 
   public ParseResult parse(String... args) {
+
     Map<String, List<Token>> map = mapper.build(args);
     List<String> messages = new ArrayList<String>();
+
     for (Expectation expectation : expectations) {
       if (!expectation.predicate.matches(map.get(expectation.field))) {
-        String fieldName = expectation.field.replace("'", "''");
-        String msg = expectation.message == null ? "" : expectation.message.replace("'", "''");
-        messages.add(String.format("'%s' == '%s' is not ok", fieldName, msg));
+        messages.add(String.format("%s: %s", expectation.field, expectation.message));
       }
     }
 
+    ParsedArgs parsedArgs = new ParsedArgs(mapper.build(args));
 
-    ParsedArgs parsedArgs = new ParsedArgs(map);
+    Map<String, TokenValue.ValType> declared = new HashMap<String, TokenValue.ValType>(expectations.size());
+
+    for (Expectation expectation: expectations) {
+      declared.put(expectation.getField(), expectation.type);
+    }
 
     // TODO unit tests for strictness rules, also TODO: how to make a property required?
-    if (strictnessRules.contains(StrictnessRule.REJECT_UNDECLARED_FLAGS)) {
+    if (rejectionConditions.contains(RejectionCondition.UNDECLARED_FLAG)) {
       for (String key : parsedArgs.getKeys()) {
         if (parsedArgs.get(key).isFlag()) {
-          if (!mapper.getTokenizer().getAtomic().matches(key)) {
-            messages.add("unknown flag: " + key);
+          if (declared.get(key) == null || declared.get(key) != TokenValue.ValType.FLAG) {
+            messages.add("undeclared flag: " + key);
           }
         }
       }
     }
 
-    if (strictnessRules.contains(StrictnessRule.REJECT_UNDECLARED_PROPERTIES)) {
+    if (rejectionConditions.contains(RejectionCondition.UNDECLARED_PROPERTY)) {
       for (String key : parsedArgs.getKeys()) {
-        if (parsedArgs.get(key).isValues()) {
-          if (!mapper.getTokenizer().getStrongBinding().matches(key)) {
-            messages.add("unknown property: " + key);
+        if (parsedArgs.get(key).isList()) {
+          if (declared.get(key) == null || declared.get(key) != TokenValue.ValType.PROPERTY) {
+            messages.add("undeclared property: " + key + " = " + parsedArgs.get(key).getStrings());
           }
-        }
-      }
-    }
-
-    if (strictnessRules.contains(StrictnessRule.REJECT_MIXED)) {
-      for (String key : parsedArgs.getKeys()) {
-        if (parsedArgs.get(key).isMixed()) {
-          messages.add("mixing flags and values: " + key);
-        }
-      }
-    }
-
-    // this might happen if a strong binding key is the last argument
-    if (strictnessRules.contains(StrictnessRule.REJECT_EMPTY_PROPERTY)) {
-      for (String key : parsedArgs.getKeys()) {
-        if (!mapper.getTokenizer().getStrongBinding().matches(key) &&
-            (!parsedArgs.get(key).isValues() || parsedArgs.get(key).getValues().isEmpty())) {
-          messages.add("property needs a value: " + key);
         }
       }
     }

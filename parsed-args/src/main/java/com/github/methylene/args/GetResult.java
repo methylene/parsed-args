@@ -14,7 +14,7 @@ public class GetResult {
     this.tokens = tokens;
   }
 
-  public List<String> getValues() {
+  public List<String> getStrings() {
     if (tokens.isEmpty())
       return Collections.emptyList();
     List<String> result = new ArrayList<String>(tokens.size());
@@ -29,25 +29,18 @@ public class GetResult {
   public String getString() {
     if (tokens.isEmpty())
       return null;
-    List<String> o = getValues();
+    List<String> o = getStrings();
     if (o.size() > 1)
       throw new IllegalStateException("multiple values");
     return o.get(0);
   }
 
-  public boolean getFlag() {
-    return getFlagCount() > 0;
+  public boolean isPresent() {
+    return count() > 0;
   }
 
-  public int getFlagCount() {
-    int n = 0;
-    for (TokenValue arg : tokens) {
-      if (arg.isFlag())
-        n++;
-      else
-        throw new IllegalStateException("got value but was expecting flag");
-    }
-    return n;
+  public int count() {
+    return tokens.size();
   }
 
   public Long getNumber(Long defaultValue) {
@@ -75,11 +68,11 @@ public class GetResult {
     return false;
   }
 
-  public boolean isValues() {
+  public boolean isList() {
     if (tokens.isEmpty())
       return false;
     for (TokenValue val : tokens)
-      if (val.getType() != TokenValue.ValType.VALUE)
+      if (val.getType() != TokenValue.ValType.PROPERTY)
         return false;
     return true;
   }
@@ -88,8 +81,13 @@ public class GetResult {
     return tokens.size();
   }
 
-  public boolean isSingleValue() {
-    return tokens.size() == 1;
+  public boolean isProperty() {
+    if (tokens.isEmpty())
+      return false;
+    for (TokenValue val : tokens)
+      if (val.getType() != TokenValue.ValType.PROPERTY)
+        return false;
+    return true;
   }
 
   public boolean isFlag() {

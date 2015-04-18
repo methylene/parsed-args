@@ -27,8 +27,6 @@ public class Token {
   }
 
   public String getValue() {
-    if (!token.getValue().isValue())
-      throw new IllegalStateException("can't get value of a flag");
     return token.getValue().getValue();
   }
 

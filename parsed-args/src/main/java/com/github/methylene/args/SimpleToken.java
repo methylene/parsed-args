@@ -11,8 +11,6 @@ public class SimpleToken {
   }
 
   public static SimpleToken create(String key, String value) {
-    if ("--".equals(value))
-      Thread.dumpStack();
     return new SimpleToken(key, TokenValue.create(value));
   }
 

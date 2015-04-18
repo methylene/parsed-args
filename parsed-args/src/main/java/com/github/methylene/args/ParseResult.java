@@ -6,29 +6,28 @@ import java.util.List;
 public class ParseResult {
 
   private final ParsedArgs parsedArgs;
-  private final Outcome outcome;
   private final List<String> messages;
 
-  private ParseResult(ParsedArgs parsedArgs, Outcome outcome, List<String> messages) {
+  private ParseResult(ParsedArgs parsedArgs, List<String> messages) {
     this.parsedArgs = parsedArgs;
-    this.outcome = outcome;
     this.messages = messages;
   }
 
   static ParseResult success(ParsedArgs parsedArgs) {
-    return new ParseResult(parsedArgs, Outcome.SUCCESS, Collections.<String>emptyList());
+    return new ParseResult(parsedArgs, Collections.<String>emptyList());
   }
 
   static ParseResult failure(List<String> reasons) {
-    return new ParseResult(null, Outcome.FAILURE, reasons);
+    assert reasons != null && reasons.size() > 0;
+    return new ParseResult(null, reasons);
   }
 
   public boolean isSuccess() {
-    return outcome == Outcome.SUCCESS;
+    return parsedArgs != null;
   }
 
   public boolean isFailure() {
-    return outcome == Outcome.FAILURE;
+    return !isSuccess();
   }
 
   public List<String> getMessages() {
@@ -36,8 +35,6 @@ public class ParseResult {
   }
 
   public ParsedArgs get() {
-    if (isFailure())
-      throw new IllegalStateException("failure: " + messages);
     return parsedArgs;
   }
 

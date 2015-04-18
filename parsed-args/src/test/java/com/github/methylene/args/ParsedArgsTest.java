@@ -24,7 +24,7 @@ public class ParsedArgsTest {
 
   @Test
   public void testFail() {
-    assertFalse(parser.parse("-n").get().get("-n").isValues());
+    assertFalse(parser.parse("-n").get().get("-n").isList());
   }
 
   @Test
@@ -40,10 +40,10 @@ public class ParsedArgsTest {
 
   @Test
   public void testDash() {
-    assertThat(parser.parse("-").get().get("-").getFlagCount(), is(1));
-    assertThat(parser.parse("-1", "-", "-2").get().get("-").getFlagCount(), is(1));
-    assertEquals(singletonList("-2"), parser.parse("-1", "--", "-2").get().get("--").getValues());
-    assertEquals(asList("-2", "-3"), parser.parse("-1", "--", "-2", "-3").get().get("--").getValues());
+    assertThat(parser.parse("-").get().get("-").count(), is(1));
+    assertThat(parser.parse("-1", "-", "-2").get().get("-").count(), is(1));
+    assertEquals(singletonList("-2"), parser.parse("-1", "--", "-2").get().get("--").getStrings());
+    assertEquals(asList("-2", "-3"), parser.parse("-1", "--", "-2", "-3").get().get("--").getStrings());
   }
 
   @Test
@@ -64,7 +64,7 @@ public class ParsedArgsTest {
 
   @Test
   public void testFlag() {
-    assertTrue(parser.parse("-m", "--num=1", "-c").get().get("-m").getFlag());
+    assertTrue(parser.parse("-m", "--num=1", "-c").get().get("-m").isPresent());
   }
 
   @Test
