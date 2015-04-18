@@ -19,7 +19,7 @@ Some things are not allowed by the default parsing rules:
     == Parsing failed ==
     mixing flags and parameters: -a
 
-The DEFAULT parsing rules recognize tokens like "+%%" and "-n1" as shortcuts. 
+The DEFAULT parsing rules recognize tokens like `+%%` and `-n1` as shortcuts. 
 This is inspired by the unix `date` and `cut` commands.
 BSD parsing rules, as used by the unix `ps` commmand, can also be used:
 
