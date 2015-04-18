@@ -6,32 +6,42 @@ import java.util.List;
 
 public class GetResult {
 
+  private final TokenValue.ValType type;
   private final List<TokenValue> tokens;
 
-  public GetResult(List<TokenValue> tokens) {
-    if (tokens == null)
-      tokens = Collections.emptyList();
-    this.tokens = tokens;
+  GetResult(List<TokenValue> tokens) {
+    if (tokens == null) {
+      this.type = null;
+      this.tokens = Collections.emptyList();
+    } else {
+      this.type = tokens.get(0).getType();
+      this.tokens = tokens;
+      for (TokenValue val : tokens) {
+        if (val.getType() != type) {
+          throw new IllegalArgumentException("mixing flags and parameters");
+        }
+      }
+    }
   }
 
-  public List<String> getStrings() {
+
+  public List<String> getValues() {
     if (tokens.isEmpty())
       return Collections.emptyList();
+    if (!isParameter())
+      throw new IllegalStateException("cannot get values of a flag");
     List<String> result = new ArrayList<String>(tokens.size());
-    for (TokenValue val : tokens) {
-      if (val.isFlag())
-        throw new IllegalStateException("got flag but was expecting value");
+    for (TokenValue val : tokens)
       result.add(val.getValue());
-    }
     return result;
   }
 
-  public String getString() {
+  public String getValue() {
     if (tokens.isEmpty())
       return null;
-    List<String> o = getStrings();
+    List<String> o = getValues();
     if (o.size() > 1)
-      throw new IllegalStateException("multiple values");
+      throw new IllegalStateException("cannot get single value: multiple values found");
     return o.get(0);
   }
 
@@ -43,49 +53,22 @@ public class GetResult {
     return tokens.size();
   }
 
-  public Long getNumber(Long defaultValue) {
-    String n = getString();
+  public Long parseLong(Long defaultValue) {
+    String n = getValue();
     if (n == null)
       return defaultValue;
     return Long.parseLong(n);
   }
 
-  public Long getNumber() {
-    return getNumber(null);
+  public Long parseLong() {
+    return parseLong(null);
   }
 
-  public boolean isNull() {
-    return tokens.isEmpty();
-  }
-
-  public boolean isMixed() {
-    if (tokens.isEmpty())
-      return false;
-    TokenValue.ValType type = tokens.get(0).getType();
-    for (TokenValue val : tokens)
-      if (val.getType() != type)
-        return true;
-    return false;
-  }
-
-  public boolean isList() {
+  public boolean isParameter() {
     if (tokens.isEmpty())
       return false;
     for (TokenValue val : tokens)
-      if (val.getType() != TokenValue.ValType.PROPERTY)
-        return false;
-    return true;
-  }
-
-  public int getCount() {
-    return tokens.size();
-  }
-
-  public boolean isProperty() {
-    if (tokens.isEmpty())
-      return false;
-    for (TokenValue val : tokens)
-      if (val.getType() != TokenValue.ValType.PROPERTY)
+      if (val.getType() != TokenValue.ValType.PARAMETER)
         return false;
     return true;
   }

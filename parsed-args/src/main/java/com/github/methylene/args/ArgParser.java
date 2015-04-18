@@ -9,7 +9,7 @@ import java.util.*;
 public class ArgParser {
 
   public enum RejectionCondition {
-    UNDECLARED_FLAG, UNDECLARED_PROPERTY
+    UNDECLARED_FLAG, UNDECLARED_PARAMETER
   }
 
   public enum ArityRule {
@@ -20,7 +20,9 @@ public class ArgParser {
     ONE_OR_MORE(ListPredicates.hasCardinality(IntegerPredicates.geq(1))),
     EXACTLY_ONE(ListPredicates.hasCardinality(IntegerPredicates.exactly(1)));
     private final Predicate<List<Token>> predicate;
+
     ArityRule(Predicate<List<Token>> predicate) {this.predicate = predicate;}
+
     public Predicate<List<Token>> getPredicate() {
       return predicate;
     }
@@ -42,9 +44,9 @@ public class ArgParser {
       this.message = message;
     }
 
-    private static Expectation property(String field, ArityRule mult) {
-      return new Expectation(TokenValue.ValType.PROPERTY, field, "expected property with arity " + mult,
-          Predicates.and(TokenValue.ValType.PROPERTY.getPredicate(), mult.getPredicate()));
+    private static Expectation parameter(String field, ArityRule mult) {
+      return new Expectation(TokenValue.ValType.PARAMETER, field, "expected parameter with arity " + mult,
+          Predicates.and(TokenValue.ValType.PARAMETER.getPredicate(), mult.getPredicate()));
     }
 
     private static Expectation flag(String field, ArityRule mult) {
@@ -65,28 +67,28 @@ public class ArgParser {
   public static class ParserBuilder {
 
     private final Mapper mapper;
-    private List<Expectation> expectations = new ArrayList<Expectation>();
-    private Set<RejectionCondition> rejectionConditions = new HashSet<RejectionCondition>(RejectionCondition.values().length);
+    private final List<Expectation> expectations = new ArrayList<Expectation>();
+    private final Set<RejectionCondition> rejectionConditions = new HashSet<RejectionCondition>(RejectionCondition.values().length);
 
     private ParserBuilder(Mapper mapper) {
       this.mapper = mapper;
     }
 
-    private ParserBuilder property(String field, ArityRule mult) {
-      expectations.add(Expectation.property(field, mult));
+    private ParserBuilder parameter(String field, ArityRule mult) {
+      expectations.add(Expectation.parameter(field, mult));
       return this;
     }
 
     public ParserBuilder required(String field) {
-      return property(field, ArityRule.EXACTLY_ONE);
+      return parameter(field, ArityRule.EXACTLY_ONE);
     }
 
     public ParserBuilder optional(String field) {
-      return property(field, ArityRule.ZERO_OR_ONE);
+      return parameter(field, ArityRule.ZERO_OR_ONE);
     }
 
     public ParserBuilder list(String field) {
-      return property(field, ArityRule.ZERO_OR_MORE);
+      return parameter(field, ArityRule.ZERO_OR_MORE);
     }
 
     public ParserBuilder flag(String field, ArityRule mult) {
@@ -99,7 +101,7 @@ public class ArgParser {
     }
 
     public ParserBuilder rejectUndeclared() {
-      rejectionConditions.addAll(Arrays.asList(RejectionCondition.values()));
+      rejectionConditions.addAll(Arrays.asList(RejectionCondition.UNDECLARED_FLAG, RejectionCondition.UNDECLARED_PARAMETER));
       return this;
     }
 
@@ -146,6 +148,17 @@ public class ArgParser {
         .build();
   }
 
+  private static boolean isMixed(List<Token> tokens) {
+    if (tokens.isEmpty())
+      return false;
+    TokenValue.ValType type = tokens.get(0).getToken().getValue().getType();
+    for (Token val : tokens)
+      if (val.getType() != type)
+        return true;
+    return false;
+  }
+
+
   public ParseResult parse(String... args) {
 
     Map<String, List<Token>> map = mapper.build(args);
@@ -157,15 +170,26 @@ public class ArgParser {
       }
     }
 
+    if (!messages.isEmpty())
+      return ParseResult.failure(messages);
+
+    for (String key : map.keySet()) {
+      if (isMixed(map.get(key))) {
+        messages.add("mixing flags and parameters: " + key);
+      }
+    }
+
+    if (!messages.isEmpty())
+      return ParseResult.failure(messages);
+
     ParsedArgs parsedArgs = new ParsedArgs(mapper.build(args));
 
     Map<String, TokenValue.ValType> declared = new HashMap<String, TokenValue.ValType>(expectations.size());
 
-    for (Expectation expectation: expectations) {
+    for (Expectation expectation : expectations) {
       declared.put(expectation.getField(), expectation.type);
     }
 
-    // TODO unit tests for strictness rules, also TODO: how to make a property required?
     if (rejectionConditions.contains(RejectionCondition.UNDECLARED_FLAG)) {
       for (String key : parsedArgs.getKeys()) {
         if (parsedArgs.get(key).isFlag()) {
@@ -176,11 +200,11 @@ public class ArgParser {
       }
     }
 
-    if (rejectionConditions.contains(RejectionCondition.UNDECLARED_PROPERTY)) {
+    if (rejectionConditions.contains(RejectionCondition.UNDECLARED_PARAMETER)) {
       for (String key : parsedArgs.getKeys()) {
-        if (parsedArgs.get(key).isList()) {
-          if (declared.get(key) == null || declared.get(key) != TokenValue.ValType.PROPERTY) {
-            messages.add("undeclared property: " + key + " = " + parsedArgs.get(key).getStrings());
+        if (parsedArgs.get(key).isParameter()) {
+          if (declared.get(key) == null || declared.get(key) != TokenValue.ValType.PARAMETER) {
+            messages.add("undeclared parameter: " + key + " = " + parsedArgs.get(key).getValues());
           }
         }
       }
@@ -190,6 +214,7 @@ public class ArgParser {
       return ParseResult.failure(messages);
 
     return ParseResult.success(parsedArgs);
+
   }
 
 }

@@ -8,7 +8,7 @@ import java.util.List;
 public class TokenValue {
 
   public enum ValType {
-    PROPERTY(ListPredicates.matches(TokenPredicates.isValue())),
+    PARAMETER(ListPredicates.matches(TokenPredicates.isValue())),
     FLAG(ListPredicates.matches(TokenPredicates.isFlag()));
     private final Predicate<List<Token>> predicate;
     ValType(Predicate<List<Token>> predicate) {this.predicate = predicate;}
@@ -30,7 +30,7 @@ public class TokenValue {
   public static TokenValue create(String val) {
     if (val == null)
       throw new IllegalArgumentException("val can not be null");
-    return new TokenValue(val, ValType.PROPERTY);
+    return new TokenValue(val, ValType.PARAMETER);
   }
 
   public static TokenValue create() {
@@ -46,7 +46,7 @@ public class TokenValue {
   }
 
   public boolean isValue() {
-    return type == ValType.PROPERTY;
+    return type == ValType.PARAMETER;
   }
 
   public String getValue() {

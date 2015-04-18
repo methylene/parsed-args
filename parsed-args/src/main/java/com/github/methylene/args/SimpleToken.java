@@ -26,4 +26,8 @@ public class SimpleToken {
     return value;
   }
 
+  public TokenValue.ValType getType() {
+    return value.getType();
+  }
+
 }

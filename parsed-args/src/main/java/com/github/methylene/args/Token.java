@@ -38,4 +38,8 @@ public class Token {
     return token.getValue().isValue();
   }
 
+  public TokenValue.ValType getType() {
+    return token.getType();
+  }
+
 }
