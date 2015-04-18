@@ -13,7 +13,7 @@ There is a script `parse.sh` which can be used to explore the default parsing be
     flag "-" occurs 1 times
     property "--" has multiple values: [-x, -y]
 
-Some things are not allowed by the default parsing rules:
+One thing is never allowed:
 
     $ ./parse.sh DEFAULT -a 1 -a
     == Parsing failed ==
