@@ -80,6 +80,6 @@ It is not possible to define <i>long opt / short opt</i> pairs
 that should be treated as equivalent ways to specify the same parameter.
 This must be done manually, or implemented on top of this parser.
 
-It is also not possible to register <i>converters</i>. All parsed arguments are treated as strings
-or lists of strings.
+It is also not possible to register <i>converters</i> and <i>validators</i> for parameter <i>values</i>.
+Parameter values are always treated as strings or lists of strings, and conversion of.
 The only exception from this rule is currently the convenience method `Argument#parseLong`.
