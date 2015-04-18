@@ -23,9 +23,9 @@ class Util {
       if (value.isFlag()) {
         System.out.format("flag \"%s\" occurs %d times%n", key, value.count());
       } else if (value.isParameter() && value.count() == 1) {
-        System.out.format("property \"%s\" has value \"%s\"%n", key, value.getValue());
+        System.out.format("parameter \"%s\" has value \"%s\"%n", key, value.getValue());
       } else {
-        System.out.format("property \"%s\" has multiple values: %s%n", key, value.getValues());
+        System.out.format("parameter \"%s\" has multiple values: %s%n", key, value.getValues());
       }
     }
 
