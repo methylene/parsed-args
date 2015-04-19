@@ -85,3 +85,13 @@ Parameter values are always read as strings or lists of strings,
 and no conversion or validation is performed apart from checking the <i>cardinality</i>
 of the parameter. For example, marking a parameter as required means that its
 cardinality should be exactly `1`.
+
+### Maven dependency information
+
+````xml
+<dependency>
+  <groupId>com.github.methylene</groupId>
+  <artifactId>parsed-args</artifactId>
+  <version>1.0</version>
+</dependency>
+````
